@@ -59,6 +59,10 @@ DECLARE
      v_num_funcionarios             integer;
      v_id_funcionario_estado_sig    integer;
      v_reg_cbte                     record;
+     
+     v_id_tipo_relacion_comprobante    integer;
+     v_registros_relacion   record;
+     va_id_int_comprobante_fks        integer[]; 
     
 BEGIN
 
@@ -239,7 +243,54 @@ BEGIN
     id_usuario_ai   = p_id_usuario_ai,
     usuario_ai      = p_usuario_ai
     where pc.id_cobro_simple  = v_registros_cv.id_cobro_simple; 
+      
+    --relacionar el comprobante de pago con los comprbantes de devengado
+    
+    select 
+       trc.id_tipo_relacion_comprobante
+     into
+       v_id_tipo_relacion_comprobante 
+    from conta.ttipo_relacion_comprobante trc
+    where trc.codigo = 'INGDEV';
+       
+    --   listas  facturas relacionadas a cobro , recupera comrobante de cobro
+    FOR v_registros_relacion in (
+                       select 
+                         csd.id_doc_compra_venta,
+                         dcv.id_int_comprobante as id_cbte_dev,
+                         cs.id_int_comprobante as id_cbte_pago
+                      from cbr.tcobro_simple_det csd
+                      inner join cbr.tcobro_simple cs on cs.id_cobro_simple = csd.id_cobro_simple
+                      inner join conta.tdoc_compra_venta dcv on dcv.id_doc_compra_venta = csd.id_doc_compra_venta
+                      where      dcv.estado_reg = 'activo' and  cs.id_int_comprobante is not null
+                            and   cs.id_cobro_simple  = v_registros_cv.id_cobro_simple
+       )LOOP
+    
             
+    
+               va_id_int_comprobante_fks = NULL;
+               select 
+                  cbt.id_int_comprobante_fks
+                  into
+                  va_id_int_comprobante_fks
+               from conta.tint_comprobante cbt
+               where cbt.id_int_comprobante = v_registros_relacion.id_cbte_pago;
+               
+               
+              IF   v_registros_relacion.id_cbte_dev = ANY(va_id_int_comprobante_fks) THEN
+              
+                    raise notice 'no relaciona % ', v_registros_relacion.id_cbte_pago;
+                    
+              else
+                    update  conta.tint_comprobante set
+                    id_int_comprobante_fks = array_append(va_id_int_comprobante_fks, v_registros_relacion.id_cbte_dev),
+                    id_tipo_relacion_comprobante = v_id_tipo_relacion_comprobante
+                    where id_int_comprobante = v_registros_relacion.id_cbte_pago;
+                
+              END IF;
+              
+               
+    END LOOP;         
             
    RETURN  TRUE;
 

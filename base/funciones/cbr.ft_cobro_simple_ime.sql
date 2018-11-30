@@ -19,7 +19,8 @@ $body$
  HISTORIAL DE MODIFICACIONES:
 #ISSUE				FECHA				AUTOR				DESCRIPCION
  #0				31-12-2017 12:33:30								Funcion que gestiona las operaciones basicas (inserciones, modificaciones, eliminaciones de la tabla 'cbr.tcobro_simple'	
- #
+ #1				21/08/2018				EGS					se aumento campos en la sentencia de insercion y modificacion en las transacciones CBR_PAGSIM_INS,CBR_PAGSIM_MOD
+ 
  ***************************************************************************/
 
 DECLARE
@@ -75,6 +76,7 @@ DECLARE
     v_id_moneda_tri		       integer;
     v_id_moneda_act            integer;
     va_montos        	       numeric[];
+    v_reg_cbte		           record;
 			    
 BEGIN
 
@@ -126,11 +128,11 @@ BEGIN
             end if;
             
             --jrr: si se genera a partir de una obligacion de pago 
-			if (v_parametros.id_obligacion_pago is not null) then
+		if (v_parametros.id_int_comprobante is not null) then
             	--obtener datos op
-            	select * into v_obligacion_pago
-                from tes.tobligacion_pago op
-                where op.id_obligacion_pago = v_parametros.id_obligacion_pago;
+            	select * into v_reg_cbte
+                from conta.tint_comprobante cbte
+                where cbte.id_int_comprobante = v_parametros.id_int_comprobante;
                 
                  -- disparar creacion de procesos seleccionados
                       
@@ -146,14 +148,14 @@ BEGIN
                          p_id_usuario,
                          v_parametros._id_usuario_ai,
                          v_parametros._nombre_usuario_ai,
-                         v_obligacion_pago.id_estado_wf, 
+                         v_reg_cbte.id_estado_wf, 
                          v_parametros.id_funcionario, 
                          v_parametros.id_depto_conta,
-                         'Solicitud de Pago simple obligacion de pago',
+                         'Solicitud de Cobro Simple',
                          v_codigo_tipo_proceso,    
                          v_codigo_tipo_proceso);
                 --el num tramite es el mismo
-                v_num_tramite = v_obligacion_pago.num_tramite;
+                v_num_tramite =  v_reg_cbte.nro_tramite;
             else
                 ---------------------------
                 --Inicio del tramite de WF
@@ -188,7 +190,7 @@ BEGIN
                    v_codigo_tipo_proceso,
                    v_parametros.id_funcionario,
                    v_parametros.id_depto_conta,
-                   'Solicitud de Pago simple',
+                   'Solicitud de Cobro simple',
                    '' );
             end if;		
             
@@ -251,7 +253,8 @@ BEGIN
                 importe_mt,
                 importe_mb,
                 importe_ma,
-                forma_cambio
+                forma_cambio,
+                id_int_comprobante    --EGS--1A
           	) values(
 				'activo',
 				v_parametros.id_depto_conta,
@@ -284,7 +287,8 @@ BEGIN
                 v_monto_mt,
                 v_monto_mb,
                 v_monto_ma,
-                v_parametros.forma_cambio
+                v_parametros.forma_cambio,
+                v_parametros.id_int_comprobante  --EGS--1A
 			) RETURNING id_cobro_simple into v_id_cobro_simple;
 			
 			--Definicion de la respuesta
@@ -396,7 +400,8 @@ BEGIN
                 importe_mt = v_monto_mt,
                 importe_mb = v_monto_mb,
                 importe_ma = v_monto_ma,
-                forma_cambio = v_parametros.forma_cambio
+                forma_cambio = v_parametros.forma_cambio,
+                id_int_comprobante=v_parametros.id_int_comprobante   --EGS--1A
 			where id_cobro_simple=v_parametros.id_cobro_simple;
                
 			--Definicion de la respuesta

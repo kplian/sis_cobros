@@ -19,7 +19,9 @@ $body$
  HISTORIAL DE MODIFICACIONES:
 #ISSUE				FECHA				AUTOR				DESCRIPCION
  #0				01-01-2018 06:21:25								Funcion que gestiona las operaciones basicas (inserciones, modificaciones, eliminaciones de la tabla 'cbr.tcobro_simple_det'	
- #
+ #1             20/08/2018              EGS                  en la trnassaccion CBR_RELFAC_IME se aumento la logica para el cobro de retencion de garantias y regularizados
+ #2				10/09/2018				EGS					se aumento las validaciones y variables para cobro de anticipos
+
  ***************************************************************************/
 
 DECLARE
@@ -46,6 +48,18 @@ DECLARE
     v_total_regitro_previos_facturas_mb	    numeric;
     va_montos		                        numeric[];
     v_id_moneda_act	                        integer;
+    
+    v_bandera						varchar;
+    v_bandera_rg 					varchar;
+    v_bandera_ant					VARCHAR;  ----- #2  EGS 10/09/2018
+    
+    
+    v_bandera_regularizacion		varchar;
+    v_bandera_regularizacion_comun		varchar;
+    v_bandera_regularizacion_retgar		varchar;
+    v_bandera_regularizacion_ant		varchar;    --#2  EGS 10/09/2018
+    
+    v_bandera_consulta						varchar;
               
 			    
 BEGIN
@@ -125,7 +139,9 @@ BEGIN
                cb.tipo_cambio,
                cb.tipo_cambio_mt,
                cb.tipo_cambio_ma,
-               cb.id_config_cambiaria
+               cb.id_config_cambiaria,
+               tcs.id_tipo_cobro_simple,
+               tcs.nombre
               into
                v_registros_cbr
              from cbr.tcobro_simple cb
@@ -139,11 +155,21 @@ BEGIN
                 dcv.importe_doc,
                 dcv.fecha,
                 dcv.importe_pago_liquido,
-                dcv.importe_pendiente
+                dcv.importe_pendiente,
+                dcv.codigo_aplicacion,
+                dcv.importe_retgar,
+                dcv.importe_anticipo
              into
                  v_reg_dcv
              from conta.tdoc_compra_venta dcv
              where dcv.id_doc_compra_venta = v_parametros.id_doc_compra_venta; 
+             
+             --raise exception 'id %',v_reg_dcv.id_doc_compra_venta;
+             
+             IF v_reg_dcv.codigo_aplicacion is null or v_reg_dcv.codigo_aplicacion = '' THEN
+               raise exception 'La factura no tiene una aplicación definida.';
+             END IF;
+             
              
              IF   v_reg_dcv is null THEN
                  raise exception 'No se encontro la factura ID %', v_parametros.id_doc_compra_venta;
@@ -153,6 +179,8 @@ BEGIN
              IF v_registros_cbr is null THEN
                  raise exception 'No se encontro el id de cobro %',v_parametros.id_cobro_simple;
              END IF;
+             
+           
              
              
              -- validar el estado del cobro (Segun el tipo de cobro) --> CBRREG cobr de regularizacion , no tiene comprobante
@@ -170,7 +198,7 @@ BEGIN
              END IF;
              
              ----------------------------------------
-             --sumar todos los cobros de la factura             
+             --  sumar todos los cobros de la factura             
              --  considerar anticipos
              --  devoluciones de garantia
              --  pagos comunes
@@ -182,8 +210,66 @@ BEGIN
              v_id_moneda_base = param.f_get_moneda_base();
              v_id_moneda_tri = param.f_get_moneda_triangulacion();
              
-            
+
+             v_bandera = split_part(pxp.f_get_variable_global('v_cobro_comun'), ',', 1);
+             v_bandera_rg = split_part(pxp.f_get_variable_global('v_cobro_retencion_garantia'), ',', 1);
+             v_bandera_ant = split_part(pxp.f_get_variable_global('v_cobro_anticipo'), ',', 1);
              
+             
+             v_bandera_regularizacion_comun = split_part(pxp.f_get_variable_global('v_cobro_comun'), ',', 2);
+             v_bandera_regularizacion_retgar= split_part(pxp.f_get_variable_global('v_cobro_retencion_garantia'), ',', 2);
+             v_bandera_regularizacion_ant= split_part(pxp.f_get_variable_global('v_cobro_anticipo'), ',', 2);
+           -- raise exception 'bandera% %',v_bandera,v_registros_cbr.codigo_tipo;
+            --raise exception 'bandera%',v_registros_cbr.codigo_tipo;
+             
+           
+              
+             if  v_bandera = v_registros_cbr.codigo_tipo or v_bandera_regularizacion_comun = v_registros_cbr.codigo_tipo then
+             	
+             v_bandera_consulta	= split_part(pxp.f_get_variable_global('v_cobro_comun'), ',', 1);
+             v_bandera_regularizacion = split_part(pxp.f_get_variable_global('v_cobro_comun'), ',', 2);
+             
+               --raise exception 'bandera %',  v_bandera_consulta;
+              -- raise exception 'bandera 2 %', v_bandera_regularizacion;
+             elseif v_bandera_rg = v_registros_cbr.codigo_tipo or v_bandera_regularizacion_retgar = v_registros_cbr.codigo_tipo then
+             	v_bandera_consulta	=  split_part(pxp.f_get_variable_global('v_cobro_retencion_garantia'), ',', 1);
+             	v_bandera_regularizacion = split_part(pxp.f_get_variable_global('v_cobro_retencion_garantia'), ',', 2);
+             elseif v_bandera_ant = v_registros_cbr.codigo_tipo or v_bandera_regularizacion_ant = v_registros_cbr.codigo_tipo then
+             	v_bandera_consulta	=  split_part(pxp.f_get_variable_global('v_cobro_anticipo'), ',', 1);
+             	v_bandera_regularizacion = split_part(pxp.f_get_variable_global('v_cobro_anticipo'), ',', 2);
+              	 
+             end if;
+             --v_bandera_consulta	= 'CBRCMN';
+            -- v_bandera_regularizacion 	= 'CBRCMNRE' ; 
+             --raise exception 'bandera consulta % ',v_bandera_consulta;
+             --raise exception 'bandera regularizacion% ', v_bandera_regularizacion;
+             --raise exception 'registro% ',''''|| v_registros_cbr.codigo_tipo||'''';
+             
+                         
+      SELECT( (select COALESCE(sum(csd.importe_mb),0)
+                from cbr.tcobro_simple_det csd
+                left join cbr.tcobro_simple cbs on cbs.id_cobro_simple = csd.id_cobro_simple
+                left join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cbs.id_tipo_cobro_simple 
+                 where csd.id_doc_compra_venta = v_parametros.id_doc_compra_venta and tcs.codigo = v_bandera_consulta )
+         			  +
+                  (select COALESCE(sum(csd.importe_mb),0)
+                from cbr.tcobro_simple_det csd
+                left join cbr.tcobro_simple cbs on cbs.id_cobro_simple = csd.id_cobro_simple
+                left join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cbs.id_tipo_cobro_simple 
+                 where csd.id_doc_compra_venta = v_parametros.id_doc_compra_venta and tcs.codigo = v_bandera_regularizacion    
+                ) )as totalmb,
+                
+                ( select COALESCE(sum(csd.importe_mt),0)
+                from cbr.tcobro_simple_det csd
+                left join cbr.tcobro_simple cbs on cbs.id_cobro_simple = csd.id_cobro_simple
+                left join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cbs.id_tipo_cobro_simple 
+                 where csd.id_doc_compra_venta = v_parametros.id_doc_compra_venta and tcs.codigo in (v_bandera_consulta,v_bandera_regularizacion))as totalmt
+                 into 
+               v_total_importe_cobro_mb,
+               v_total_importe_cobro_mt;
+             --raise exception 'total%', execute(v_total_importe_cobro_mb);
+            --raise exception 'total %', v_total_importe_cobro_mt;
+             /*
              select 
                sum(csd.importe_mb),
                sum(csd.importe_mt) 
@@ -192,12 +278,18 @@ BEGIN
                v_total_importe_cobro_mt
                    
              from cbr.tcobro_simple_det csd
-              where     csd.id_doc_compra_venta = v_parametros.id_doc_compra_venta
-                   and csd.estado_reg = 'activo';
-                   
-                   
-             v_total_importe_cobro_mb = COALESCE(v_total_importe_cobro_mb,0);
-             v_total_importe_cobro_mt = COALESCE(v_total_importe_cobro_mt,0);
+              left join cbr.tcobro_simple cbs on cbs.id_cobro_simple = csd.id_cobro_simple
+              left join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cbs.id_tipo_cobro_simple 
+              where   csd.id_doc_compra_venta = v_parametros.id_doc_compra_venta
+                   and csd.estado_reg = 'activo'and tcs.codigo =  v_registros_cbr.codigo_tipo ;		*/	
+            
+           
+            v_total_importe_cobro_mb = COALESCE(v_total_importe_cobro_mb,0);
+            v_total_importe_cobro_mt = COALESCE(v_total_importe_cobro_mt,0);
+             
+             
+             
+             
              
              IF  v_reg_dcv.id_moneda not in (v_id_moneda_base, v_id_moneda_tri)   THEN             
                 raise exception 'moneda no soportada para docuementos de venta';             
@@ -222,35 +314,130 @@ BEGIN
             v_monto_prorrateo_ma = va_montos[3];
               
             
-                                        
-             -------------------------------------------------------------------------
-             --el monto asignado  al cobro no puede sobrepasar el saldo de la factura
-             --------------------------------------------------------------------------
+  
              
-             IF v_id_moneda_base = v_reg_dcv.id_moneda  THEN
-               --raise exception 'entra..  1)  %, 2) %, 3) %', v_reg_dcv.importe_doc , v_total_importe_cobro_mb ,  v_monto_prorrateo_mb;
-               IF v_reg_dcv.importe_pendiente < v_monto_prorrateo_mb THEN
-                  raise exception 'el monto a cobrar no puede ser mayor que el total de la factura';
-               END IF;
-               
-               --Todas las moendas estan en bolivianos             
-               IF    v_reg_dcv.importe_pendiente <  (v_total_importe_cobro_mb +  v_monto_prorrateo_mb) THEN  
-                 raise exception 'BOB , el monto a pagar prorrateado (%) mas los pagos previos (%) sobrepasa el monto del documento (%)', v_monto_prorrateo_mb , v_total_importe_cobro_mb, v_reg_dcv.importe_pendiente; 
-               END IF;
-               
-             ELSEIF v_id_moneda_tri = v_reg_dcv.id_moneda  THEN
              
-                IF v_reg_dcv.importe_pendiente < v_monto_prorrateo_mt THEN
-                  raise exception 'el monto a cobrar no pueder  ser mayor que el total de la factura';
-                END IF;
-               
-               -- Todas las moendas estan en dolares
-                IF  v_reg_dcv.importe_pendiente <  (v_total_importe_cobro_mt +  v_monto_prorrateo_mt) THEN  
-                  raise exception 'USD , el monto a pagar prorrateado (%) mas los pagos previos (%) sobrepasa el monto del documento (%)', v_monto_prorrateo_mt , v_total_importe_cobro_mt, v_reg_dcv.importe_pendiente; 
-                END IF;
-             ELSE
-               raise exception 'moenda no soportada';
-             END IF;
+          -- raise exception 'entraaaaa%',v_monto_prorrateo_mb; 
+           
+ -------------------------------------------------------------------------
+  --Cobro Comun codigo = CBRCMN usado en el registro de tipo de cobro
+  --en regularizado codigo= CBRCMNRE
+ --------------------------------------------------------------------------
+          
+           IF  v_bandera = v_registros_cbr.codigo_tipo or v_bandera_regularizacion_comun=v_registros_cbr.codigo_tipo then
+                   
+                  
+                   -------------------------------------------------------------------------
+                   --el monto asignado  al cobro no puede sobrepasar el saldo de la factura
+                   --------------------------------------------------------------------------
+                   
+                   IF v_id_moneda_base = v_reg_dcv.id_moneda  THEN
+                     --raise exception 'entra..  1)  %, 2) %, 3) %', v_reg_dcv.importe_doc , v_total_importe_cobro_mb ,  v_monto_prorrateo_mb;
+               		--raise exception 'monto pendiente %',v_reg_dcv.importe_pendiente;
+                        IF v_reg_dcv.importe_pendiente < v_monto_prorrateo_mb THEN
+                            raise exception 'el monto a cobrar no puede ser mayor que al pendiente por cobrar de la factura';
+                         END IF;
+                           
+                         --Todas las moendas estan en bolivianos             
+                         IF    v_reg_dcv.importe_pendiente <  (v_total_importe_cobro_mb +  v_monto_prorrateo_mb) THEN  
+                           raise exception 'BOB , el monto a pagar prorrateado (%) mas los pagos previos (%) sobrepasa el monto del documento (%)', v_monto_prorrateo_mb , v_total_importe_cobro_mb, v_reg_dcv.importe_pendiente; 
+                         END IF;
+                     
+                   ELSEIF v_id_moneda_tri = v_reg_dcv.id_moneda  THEN
+                   
+                          IF v_reg_dcv.importe_pendiente < v_monto_prorrateo_mt THEN
+                            raise exception 'el monto a cobrar no pueder  ser mayor que el total de la factura';
+                          END IF;
+                         
+                           -- Todas las moendas estan en dolares
+                            IF  v_reg_dcv.importe_pendiente <=  (v_total_importe_cobro_mt +  v_monto_prorrateo_mt) THEN  
+                              raise exception 'USD , el monto a pagar prorrateado (%) mas los pagos previos (%) sobrepasa el monto del documento (%)', v_monto_prorrateo_mt , v_total_importe_cobro_mt, v_reg_dcv.importe_pendiente; 
+                            END IF;
+                   ELSE
+                     raise exception 'moenda no soportada';
+                   END IF;
+  -------------------------------------------------------------------------
+  --Cobro Retencion con garantias codigo = CBRCMNRG usado en el registro de tipo de cobro
+  --en regularizado codigo= CBRCMNRGRE
+ --------------------------------------------------------------------------
+             
+           ELSIF    v_bandera_rg = v_registros_cbr.codigo_tipo or v_bandera_regularizacion_retgar = v_registros_cbr.codigo_tipo THEN
+           
+                IF v_id_moneda_base = v_reg_dcv.id_moneda  THEN
+                         --raise exception 'entra..  1)  %, 2) %, 3) %', v_reg_dcv.importe_doc , v_total_importe_cobro_mb ,  v_monto_prorrateo_mb;
+                   				
+                         --raise EXCEPTION 'total cobrado %',(v_total_importe_cobro_mb +  v_monto_prorrateo_mb);
+                             IF v_reg_dcv.importe_retgar < v_monto_prorrateo_mb THEN
+                                raise exception 'el monto a cobrar no puede ser mayor que el total por cobrar de la retencion de garantias de la factura';
+                             END IF;
+                             
+                             --Todas las moendas estan en bolivianos             
+                             IF    v_reg_dcv.importe_retgar <  (v_total_importe_cobro_mb +  v_monto_prorrateo_mb) THEN  
+                               raise exception 'BOB , el monto a pagar prorrateado (%) mas los pagos previos (%) sobrepasa el monto de la retencion de garantias del documento(%)', v_monto_prorrateo_mb , v_total_importe_cobro_mb, v_reg_dcv.importe_retgar; 
+                             END IF;
+                         
+                 ELSEIF v_id_moneda_tri = v_reg_dcv.id_moneda  THEN
+                       
+                                  IF v_reg_dcv.importe_retgar < v_monto_prorrateo_mt THEN
+                                    raise exception 'el monto a cobrar no pueder  ser mayor que el total de retencion de garantias de la factura ';
+                                  END IF;
+                         
+                                 -- Todas las moendas estan en dolares
+                                  IF  v_reg_dcv.importe_retgar <  (v_total_importe_cobro_mt +  v_monto_prorrateo_mt) THEN  
+                                    raise exception 'USD , el monto a pagar prorrateado (%) mas los pagos previos (%)sobrepasa el monto de la retencion de garantias del documento(%)', v_monto_prorrateo_mt , v_total_importe_cobro_mt, v_reg_dcv.importe_retgar; 
+                                  END IF;
+                   ELSE
+                          raise exception 'moneda no soportada';
+                   END IF;
+          
+           
+           
+           
+                -------------------------------#2  I-EGS 10/09/2018------------------------------------------
+                  --Cobro Retencion con garantias codigo = CBRCMNAT usado en el registro de tipo de cobro
+                  --en regularizado codigo= CBRCMNATRE
+                --------------------------------------------------------------------------
+             
+           ELSIF   v_bandera_ant = v_registros_cbr.codigo_tipo or v_bandera_regularizacion_ant = v_registros_cbr.codigo_tipo THEN
+           
+                IF v_id_moneda_base = v_reg_dcv.id_moneda  THEN
+                         --raise exception 'entra..  1)  %, 2) %, 3) %', v_reg_dcv.importe_doc , v_total_importe_cobro_mb ,  v_monto_prorrateo_mb;
+                   				
+                         --raise EXCEPTION 'total cobrado %',(v_total_importe_cobro_mb +  v_monto_prorrateo_mb);
+                             IF v_reg_dcv.importe_anticipo < v_monto_prorrateo_mb THEN
+                                raise exception 'el monto a cobrar no puede ser mayor que el total por cobrar de anticipos de la factura';
+                             END IF;
+                             
+                             --Todas las moendas estan en bolivianos             
+                             IF    v_reg_dcv.importe_anticipo <  (v_total_importe_cobro_mb +  v_monto_prorrateo_mb) THEN  
+                               raise exception 'BOB , el monto a pagar prorrateado (%) mas los pagos previos (%) sobrepasa el monto de los  anticipos del documento(%)', v_monto_prorrateo_mb , v_total_importe_cobro_mb, v_reg_dcv.importe_retgar; 
+                             END IF;
+                         
+                 ELSEIF v_id_moneda_tri = v_reg_dcv.id_moneda  THEN
+                       
+                                  IF v_reg_dcv.importe_anticipo < v_monto_prorrateo_mt THEN
+                                    raise exception 'el monto a cobrar no pueder  ser mayor que el total de anticipos de la factura ';
+                                  END IF;
+                         
+                                 -- Todas las moendas estan en dolares
+                                  IF  v_reg_dcv.importe_anticipo <  (v_total_importe_cobro_mt +  v_monto_prorrateo_mt) THEN  
+                                    raise exception 'USD , el monto a pagar prorrateado (%) mas los pagos previos (%)sobrepasa el monto de los anticipos del documento(%)', v_monto_prorrateo_mt , v_total_importe_cobro_mt, v_reg_dcv.importe_retgar; 
+                                  END IF;
+                 ELSE
+                          raise exception 'moneda no soportada';
+            	 END IF;
+           
+           
+           END IF;
+                        
+  -------------------------------#2  F-EGS 10/09/2018------------------------------------------
+           
+           
+           
+      
+           
+           
+             
              
              -------------------------------------------------------------------------------
              -- el monto total de las factursa no peude sobrepsar el monto totla a cobrar

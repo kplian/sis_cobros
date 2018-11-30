@@ -19,7 +19,8 @@ $body$
  HISTORIAL DE MODIFICACIONES:
 #ISSUE              FECHA               AUTOR               DESCRIPCION
  #0             31-12-2017 12:33:30          rac                     Funcion que devuelve conjuntos de registros de las consultas relacionadas con la tabla 'cbr.tcobro_simple'    
- #
+ #1             21/08/2018              EGS				se modifico las  transacciones CBR_PAGSIM_SEL , CBR_PAGSIM_CONT 
+ #2				13/09/2018				EGS				se modifico la transaccion CBR_PAGSIM_SEL y se declaro variables
  ***************************************************************************/
 
 DECLARE
@@ -34,6 +35,20 @@ DECLARE
     v_inner             varchar;
     v_strg_cd           varchar;
     v_strg_obs          varchar;
+    
+    v_id_moneda_base	integer;
+    v_id_moneda_tri	    integer;
+     v_registro_moneda	record;
+    va_id_depto			integer[];
+    v_codigo_moneda_base		varchar;
+    v_desde				varchar;
+    v_hasta				varchar;
+    
+      -- #2				13/09/2018				EGS
+     v_bandera				 varchar;
+     v_bandera_rg 			 varchar;
+     v_bandera_ant			 varchar;
+    -- #2				13/09/2018				EGS		     
                 
 BEGIN
 
@@ -50,7 +65,12 @@ BEGIN
     if(p_transaccion='CBR_PAGSIM_SEL')then
                     
         begin
-
+			 -- variables globales para que lleguen a redender de los campos en la vista
+             --#2				13/09/2018				EGS
+        	 v_bandera = split_part(pxp.f_get_variable_global('v_cobro_comun'), ',', 1);
+             v_bandera_rg = split_part(pxp.f_get_variable_global('v_cobro_retencion_garantia'), ',', 1);
+             v_bandera_ant = split_part(pxp.f_get_variable_global('v_cobro_anticipo'), ',', 1);
+             -- #2				13/09/2018				EGS
            
 
             --Filtros
@@ -61,7 +81,13 @@ BEGIN
             else
                 v_historico = 'no';
             end if;
-
+            /*
+             if p_administrador != 1  then
+            	
+            	 v_filtro = v_filtro || 'pagsim.id_usuario_reg in (54,218,447,304 )and';
+            
+             END if;
+			*/
             if v_parametros.tipo_interfaz in ('PagoSimpleSol') then
 
                 if p_administrador != 1  then
@@ -88,7 +114,8 @@ BEGIN
                 end if;
 
             end if;
-
+			
+             -- agregaron campos para variables globales para que lleguen a redender de los campos en la vista
             --Sentencia de la consulta
             v_consulta:='select
                             pagsim.id_cobro_simple,
@@ -148,7 +175,12 @@ BEGIN
                             pagsim.importe_mt,
                             pagsim.importe_mb,
                             pagsim.importe_ma,
-                            forma_cambio
+                            pagsim.forma_cambio,
+                            COALESCE(pagsim.id_int_comprobante,0),
+                            cbte.nro_cbte,
+                            '''||v_bandera||'''::varchar as globalComun,
+                            '''||v_bandera_rg||'''::varchar as globalRetgar,
+                            '''||v_bandera_ant||'''::varchar as globalAnti
                             
                             
                         from cbr.tcobro_simple pagsim
@@ -166,7 +198,9 @@ BEGIN
                         left join orga.vfuncionario fun1 on fun1.id_funcionario = pagsim.id_funcionario_pago
                         left join tes.tobligacion_pago op on op.id_obligacion_pago = pagsim.id_obligacion_pago
                         left join tes.tcaja caj on caj.id_caja = pagsim.id_caja
+                        left join conta.tint_comprobante cbte on cbte.id_int_comprobante = pagsim.id_int_comprobante
                         where  ';
+                       
 
             v_consulta = v_consulta || v_filtro;
             
@@ -303,6 +337,7 @@ BEGIN
                         left join orga.vfuncionario fun1 on fun1.id_funcionario = pagsim.id_funcionario_pago
                         left join tes.tobligacion_pago op on op.id_obligacion_pago = pagsim.id_obligacion_pago
                         left join tes.tcaja caj on caj.id_caja = pagsim.id_caja
+                        left join conta.tint_comprobante cbte on cbte.id_int_comprobante = pagsim.id_int_comprobante
                         where ';
 
             v_consulta = v_consulta || v_filtro;
