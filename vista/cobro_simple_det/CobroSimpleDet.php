@@ -5,7 +5,13 @@
 *@author  (admin)
 *@date 01-01-2018 06:21:25
 *@description Archivo con la interfaz de usuario que permite la ejecucion de todas las funcionalidades del sistema
-*/
+ * *   	
+ ISSUE            FECHA:		      AUTOR                 DESCRIPCION
+ * 123				20/08/2018     EGS						se modificaron a las funciones y formulario relacionado a relacion entre factura y cobro
+ * 124				24/08/2018		EGS						se modifico para qu no se pueda adicionar facturas en los primeros estados de cobro de anticipos
+ * 125				12/09/2018		EGS						se modifico para la vista del formulario de prorrateo muestre los campos de anticipo
+ * 
+ * */
 
 header("content-type: text/javascript; charset=UTF-8");
 ?>
@@ -164,6 +170,9 @@ Phx.vista.CobroSimpleDet = {
     
     onReloadPage: function(m) {    	
         this.maestro = m;
+        
+        this.preparaMenu();
+        
         this.Atributos[this.getIndAtributo('id_cobro_simple')].valorInicial = this.maestro.id_cobro_simple;
         //Filtro para los datos
         this.store.baseParams = {
@@ -194,12 +203,68 @@ Phx.vista.CobroSimpleDet = {
 		}
 		this.getBoton('btnShowDoc').enable();
 		
+		//////////I-EGS///24/08/2018  ---124
+		console.log('tipo',this.maestro.codigo_tipo_cobro_simple);
+		this.obtenerVariableGlobal();
+		
+		if(this.maestro.codigo_tipo_cobro_simple == this.codigo_ant) {
+			if (this.maestro.estado == 'borrador' ||this.maestro.estado == 'vbtesoreria' ||this.maestro.estado == 'pendiente'  ) {
+			this.getBoton('btnNewDoc').disable();
+			this.getBoton('del').disable();
+				
+			}else{
+			
+			this.getBoton('btnNewDoc').enable();
+			this.getBoton('del').enable();
+				
+				
+			}
+			
+		} 
+		//////////F-EGS///24/08/2018   ---124
+	
+		
     },
     
     liberaMenu:function(tb){
         Phx.vista.DocCompraVenta.superclass.liberaMenu.call(this,tb);
         this.getBoton('btnShowDoc').disable();
     },
+        //////////I-EGS///24/08/2018  ---124
+     obtenerVariableGlobal: function(config){
+
+         Phx.CP.loadingShow();
+        
+         Ext.Ajax.request({
+         		    url:'../../sis_seguridad/control/Subsistema/obtenerVariableGlobal',
+		
+		 params:{
+			           codigo: 'v_cobro_anticipo'
+				 },
+		         success: function(resp){
+			             	 Phx.CP.loadingHide();
+					          var reg = Ext.util.JSON.decode(Ext.util.Format.trim(resp.responseText));
+						      if (reg.ROOT.error) {
+							            Ext.Msg.alert('Error','Error a recuperar la variable global')
+							  } else {
+									  
+							 													
+										 //console.log(reg.ROOT.datos.valor);
+										 var codigo = reg.ROOT.datos.valor;
+										 var regularizado_anticipo = codigo.split(","); 
+										 ///console.log(regularizado_anticipo[0]);
+										 this.codigo_ant=regularizado_anticipo[0];  
+										 ///console.log(this.codigo_ant);
+									
+								}
+				 },
+				failure: this.conexionFailure,
+				timeout: this.timeout,
+				scope:this
+			});
+	  			
+        },
+    //////////F-EGS///24/08/2018  ---124
     bnew: false,
     bedit: false,
     bsave: false,
@@ -326,15 +391,13 @@ Phx.vista.CobroSimpleDet = {
 		                    totalProperty:'total',
 		                    fields: ['id_doc_compra_venta','revisado','nro_documento','nit',
 		                    'desc_plantilla', 'desc_moneda','importe_doc','nro_documento',
-		                    'tipo','razon_social','fecha','importe_pendiente','importe_cobrado_mb','importe_cobrado_mt','saldo_por_cobrar'],
+		                    'tipo','razon_social','fecha','importe_pendiente','importe_cobrado_mb','importe_cobrado_mt','saldo_por_cobrar_pendiente','saldo_por_cobrar_retgar','importe_retgar','importe_cobrado_retgar_mb','importe_cobrado_retgar_mt','importe_anticipo','importe_cobrado_ant_mb','importe_cobrado_ant_mt','saldo_por_cobrar_anticipo'],
 		                    remoteSort: true,
-		                    baseParams:{par_filtro:'mon.codigo#pla.desc_plantilla#dcv.razon_social#dcv.nro_documento#dcv.nit#dcv.importe_doc'}
+		                    baseParams:{par_filtro:'mon.codigo#pla.desc_plantilla#dcv.razon_social#dcv.nro_documento#dcv.nit#dcv.importe_doc#importe_retgar'}
 		                }),
-		                tpl:'<tpl for=".">\
-		                       <div class="x-combo-list-item"><p><b>{razon_social},  NIT: {nit}</b></p>\
-		                       <p>{desc_plantilla} </p><p>Doc: {nro_documento} de Fecha: {fecha}</p>\
-		                       <p>Doc: {importe_doc}  - {desc_moneda}</p> <p>Por cobrar {importe_pendiente} {desc_moneda}</p><p>Cobrado {importe_cobrado_mb} BS</p><p><font color="green"> Cobrado {importe_cobrado_mt} USD</font></p><p>Saldo: {saldo_por_cobrar} {desc_moneda}</p></div></tpl>',
-		                       
+		             /////125				12/09/2018		EGS	
+		           		tpl:'<tpl for=".">\ <div class="x-combo-list-item"><p><b>{razon_social},  NIT: {nit}</b></p>\<p>{desc_plantilla} </p><p>Doc: {nro_documento} de Fecha: {fecha}</p>\<p>Doc: {importe_doc}  - {desc_moneda}</p><p>Pendiente: {importe_pendiente}  - {desc_moneda}</p><p>Retgar: {importe_retgar}  - {desc_moneda}</p><p>Anticipo: {importe_anticipo}  - {desc_moneda}</p><p>Por cobrar {saldo_por_cobrar_pendiente} - {desc_moneda}</p><p>Por Cobrar Ret Gar: {saldo_por_cobrar_retgar}  - {desc_moneda}</p><p>Por Cobrar Ant: {saldo_por_cobrar_anticipo}  - {desc_moneda}</p><p>Cobrado {importe_cobrado_mb} - BS</p><p>Cobrado RetGar {importe_cobrado_retgar_mb} BS</p><p>Cobrado Anti {importe_cobrado_ant_mb} - BS</p><p><font color="green"> Cobrado {importe_cobrado_mt} - USD</font></p><p><font color="green"> Cobrado RetGar {importe_cobrado_retgar_mt} - USD</font></p><p><font color="green"> Cobrado Anticipo {importe_cobrado_ant_mt} - USD</font></p></div></tpl>',
+		           ///125				12/09/2018		EGS	        
 		                       
 		                valueField: 'id_doc_compra_venta',
 		                hiddenValue: 'id_doc_compra_venta',
@@ -353,7 +416,8 @@ Phx.vista.CobroSimpleDet = {
 		            },
 		            {
 			                name: 'monto_prorrateo',
-			                xtype:"moneyfield",			                
+			                xtype:"moneyfield",		
+			                decimalPrecision:5,	                
 			                fieldLabel: 'Monto a pagar',
 			                qtip:'Monto a pagar correpondiente a la factura',
 			                currencyChar:' ',
@@ -399,9 +463,16 @@ Phx.vista.CobroSimpleDet = {
 	},
    
    mostarFormAuto:function(){
+   		 var tipo = this.maestro.codigo_tipo_cobro_simple ;
+   		 console.log(tipo);
   	     this.wAuto.show();
   	     
+  	     this.cmpIdDocCompraVenta.reset();
+  	     this.cmpMontoProrrateo.reset();
+  	       
   	      this.cmpIdDocCompraVenta.store.baseParams.id_proveedor =  this.maestro.id_proveedor;
+  	      this.cmpIdDocCompraVenta.store.baseParams.tipo_cobro = this.maestro.codigo_tipo_cobro_simple ;//////////////////EGS-I-20/08/2018//// 123
+
   	      this.cmpIdDocCompraVenta.modificado = true;
 
    },

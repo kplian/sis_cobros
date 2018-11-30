@@ -35,8 +35,22 @@ select pxp.f_insert_testructura_gui ('CBR', 'SISTEMA');
 select pxp.f_insert_testructura_gui ('TIPCOBRO', 'CBR');
 select pxp.f_insert_testructura_gui ('SOLCOB', 'CBR');
 
-;
-
+select pxp.f_insert_tgui ('Reporte de Cobros', '', 'RDC', 'si', 3, 'sis_cobros/vista/factura/FormFiltro.php', 2, '', 'FormFiltro', 'CBR');
+select pxp.f_insert_testructura_gui ('RDC', 'CBR');
 
 /***********************************F-DAT-RAC-CBR-48-02/05/2018*****************************************
 
+/***********************************I-DAT-EGS-CBR-48-02/05/2018*****************************************
+
+  
+INSERT INTO cbr.ttipo_cobro_simple ("id_usuario_reg", "estado_reg", "id_tipo_cobro_simple", "codigo", "nombre", "plantilla_cbte", "plantilla_cbte_1", "flujo_wf")
+VALUES 
+  (1, E'activo', 2, E'CBRCMN', E'Cobro Comun', E'CBRSP', E'', E'CBR'),
+  (1, E'activo', 3, E'CBRCMNRE', E'Cobro Regularizado', E'', E'', E'CBRRE'),
+  (1, E'activo', 4, E'CBRCMNRG', E'Cobro Retención Garantía', E'CBRRG', E'', E'CBRRG'),
+  (1, E'activo', 5, E'CBRCMNRGRE', E'Cobro Retención Garantía Regularizado', E'', E'', E'CBRRE'),
+  (1, E'activo', 6, E'CBRCMNAT', E'Cobro Anticipo', E'ANTICIPOCBR', E'', E'CBRAT'),
+  (1, E'activo', 7, E'CBRCMNATRE', E'Cobro Anticipos Regularizado', E'', E'', E'CBRRE');
+ 
+
+/***********************************F-DAT-EGS-CBR-48-02/05/2018*****************************************

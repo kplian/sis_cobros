@@ -1,5 +1,3 @@
---------------- SQL ---------------
-
 CREATE OR REPLACE FUNCTION cbr.f_fun_inicio_cobro_simple_wf (
   p_id_usuario integer,
   p_id_usuario_ai integer,
@@ -24,7 +22,8 @@ $body$
 
  ***************************************************************************
  HISTORIAL DE MODIFICACIONES:
-
+ ISSUE				FECHA				AUTHOR				DESCRIPCION
+ #1				10/09/2018				EGS					se aumento las validaciones y variables para cobro de anticipos
  DESCRIPCION:   
  AUTOR:         
  FECHA:         
@@ -44,6 +43,12 @@ DECLARE
     v_nombre_conexion               varchar;
     v_id_int_comprobante            integer;
     v_total_det_mb					numeric;
+    
+    --#1				10/09/2018				EGS
+    v_tipo_cobro 					varchar;
+	v_bandera						varchar; 
+    v_estado_cobro					varchar;
+    ---#1				10/09/2018				EGS
 BEGIN
     
     --Identificación del nombre de la función
@@ -95,11 +100,43 @@ BEGIN
     -- la suam de prorrateo debe cuadrar con el m onto a apgar
     select   sum(csd.importe_mb) into v_total_det_mb
     from cbr.tcobro_simple_det csd where csd.id_cobro_simple =  v_rec.id_cobro_simple  ;
-     
-    if  COALESCE(v_total_det_mb,0) != v_rec.importe_mb   then
-         raise exception 'El total prorrateado de facturas no cuadra con el total de cobro ' ;
-    end if;
-
+    
+    --raise exception 'id cobro %',v_rec.id_cobro_simple;
+    ----sabemos el tipo de cobro---
+       
+      --  #1	I-10/09/2018	EGS	
+    ---recuperar que tipò  de cobro ----
+   v_bandera = split_part(pxp.f_get_variable_global('v_cobro_anticipo'), ',', 1);
+   
+    select
+    tcs.codigo,
+    cs.estado
+    INTO
+    v_tipo_cobro ,
+    v_estado_cobro
+    FROM cbr.tcobro_simple cs
+    	left join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cs.id_tipo_cobro_simple
+    WHERE cs.id_cobro_simple = v_rec.id_cobro_simple; 
+    
+    
+    --raise exception 'v_estado_cobro %',v_estado_cobro;
+    
+ 
+   -- si es diferente al cobro de anticipos  entra  hace la validacion del prorrateo si es anticipo
+   -- y va pasar al estado Finalizado entra a la validacion
+    
+    if v_bandera != v_tipo_cobro THEN
+     -------------
+   			 if  COALESCE(v_total_det_mb,0) != v_rec.importe_mb   then
+       				  raise exception 'El total prorrateado de facturas no cuadra con el total de cobro ' ;
+   			 end if;
+    ELSIF  v_bandera = v_tipo_cobro  and v_estado_cobro = 'finalizado' then
+     			 if  COALESCE(v_total_det_mb,0) != v_rec.importe_mb   then
+       				  raise exception 'El total prorrateado de facturas no cuadra con el total de cobro ' ;
+   				 end if;
+	end if;
+    
+--  #1	F-10/09/2018	EGS
     ------------------------------------
     -- Generación de comprobante diario
     ------------------------------------
@@ -147,3 +184,6 @@ VOLATILE
 CALLED ON NULL INPUT
 SECURITY INVOKER
 COST 100;
+
+ALTER FUNCTION cbr.f_fun_inicio_cobro_simple_wf (p_id_usuario integer, p_id_usuario_ai integer, p_usuario_ai varchar, p_id_estado_wf integer, p_id_proceso_wf integer, p_codigo_estado varchar, p_id_depto_lb integer, p_id_cuenta_bancaria integer, p_estado_anterior varchar)
+  OWNER TO postgres;

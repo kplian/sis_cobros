@@ -106,3 +106,36 @@ AS
 
 /***********************************F-DEP-RAC-CBR-0-02/05/2018*****************************************/
 
+/***********************************I-DEP-EGS-CBR-0-24/10/2018*****************************************/
+CREATE OR REPLACE VIEW cbr.vcobro_simple(
+    id_cobro_simple,
+    id_moneda,
+    id_depto_conta,
+    id_depto_lb,
+    id_cuenta_bancaria,
+    id_funcionario,
+    id_proveedor,
+    id_proceso_wf,
+    id_estado_wf,
+    nro_tramite,
+    obs,
+    importe,
+    desc_dcv)
+AS
+  SELECT ps.id_cobro_simple,
+         ps.id_moneda,
+         ps.id_depto_conta,
+         ps.id_depto_lb,
+         ps.id_cuenta_bancaria,
+         ps.id_funcionario,
+         ps.id_proveedor,
+         ps.id_proceso_wf,
+         ps.id_estado_wf,
+         ps.nro_tramite,
+         ps.obs,
+         ps.importe,
+         'Doc: '::text || ps.nro_tramite::text AS desc_dcv
+  FROM cbr.tcobro_simple ps;
+
+/***********************************F-DEP-EGS-CBR-0-24/10/2018*****************************************/
+

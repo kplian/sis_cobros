@@ -5,6 +5,8 @@
 *@author  RCM
 *@date 20/01/2018
 *@description Archivo con la interfaz de usuario
+ * #1 		06/09/2018		EGS								aumento validacion de botones para anticipos
+*
 *
 */
 header("content-type: text/javascript; charset=UTF-8");
@@ -69,7 +71,7 @@ Phx.vista.CobroSimpleSol = {
         //Si está en modo histórico,no habilita ninguno de los botones que generan transacciones
         if(this.historico=='no'){
 			
-			
+			/// #1 		06/09/2018		EGS	
 		    if(data.estado == 'borrador') {			
 				
 				this.getBoton('sig_estado').enable();
@@ -82,6 +84,14 @@ Phx.vista.CobroSimpleSol = {
 				this.getBoton('ant_estado').disable();
 				this.getBoton('del').disable();
 				this.getBoton('edit').disable();
+				
+			//#1 		06/09/2018		EGS	
+			} else if(data.estado == 'prorrateo'){
+				this.getBoton('sig_estado').enable();
+				this.getBoton('ant_estado').disable();
+				this.getBoton('del').disable();
+				this.getBoton('edit').disable();
+			 //#1 		06/09/2018		EGS	
 			} else {
 				this.getBoton('ant_estado').enable();
 				this.getBoton('sig_estado').enable();
@@ -96,13 +106,10 @@ Phx.vista.CobroSimpleSol = {
         this.getBoton('diagrama_gantt').enable();
         this.getBoton('btnObs').enable();
         this.getBoton('btnChequeoDocumentosWf').enable();
+         this.getBoton('btnRecibo').enable();
 
        
         
-
-
-        //agregado
-        this.getBoton('btnDetalleDocumentoCobroSimple').enable();
         
         return tb
     },
@@ -116,9 +123,8 @@ Phx.vista.CobroSimpleSol = {
             this.getBoton('diagrama_gantt').disable();
             this.getBoton('btnObs').disable();
             this.getBoton('btnChequeoDocumentosWf').disable();
+            this.getBoton('btnRecibo').disable();
           
-            
-            this.getBoton('btnDetalleDocumentoCobroSimple').disable();
               
         }
         return tb

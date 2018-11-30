@@ -5,6 +5,11 @@
 *@author  (admin)
 *@date 31-12-2017 12:33:30
 *@description Archivo con la interfaz de usuario que permite la ejecucion de todas las funcionalidades del sistema
+ * 	ISSUE		FECHA			AUTOR			DESCRIPCION	
+ * 1A			22/08/2018 	 EGS				seagregaron los campos de id y numero de comprobante  con sus respectivas funciones para ocultar el comprobante segun el tipo cobro al añadir cobro
+ * 1B			24/08/2018   EGS				se habilito para poder controlar la adicion de facturas en ventana detalle para el anticipo
+ * 1C			13/08/2018   EGS				se agrego codigo para resaltar si es un cobro de anticipos 
+ * 1D			18/09/2018	 EGS				se creo boton para el reporte de cobros
 */
 header("content-type: text/javascript; charset=UTF-8");
 ?>
@@ -12,8 +17,16 @@ header("content-type: text/javascript; charset=UTF-8");
 Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
 	nombreVista: 'CobroSimple',
 	constructor:function(config){
-		this.maestro=config.maestro;
-
+		
+		this.maestro=config; //EGS-24/08/2018///  1B
+		
+		
+		////////////EGS-F-22/08/2018///  1A	
+		var codigo_comun ;
+		var codigo_retgar ;
+		var codigo_anticipo;
+		var codigo_ant;
+		////////////EGS-F-22/08/2018///  1A	
 		//Historico
 		this.historico = 'no';
 
@@ -44,7 +57,7 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
                     tooltip : '<b>Observaciones</b><br/><b>Observaciones del WF</b>'
         });
 
-  
+        /*
         this.addButton('btnDetalleDocumentoCobroSimple',
             {
                 text: 'Detalle documento ps',
@@ -53,8 +66,35 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
                 disabled: true,
                 handler: this.loadDetalleDocCobroSimple,
                 tooltip: '<b>Documentos de la Solicitud</b><br/>Subir los documetos requeridos en la solicitud seleccionada.'
-            });
-
+            });*/
+            
+            
+         //Boton de impresion de recibos   
+         this.addButton('btnRecibo', {
+				text : 'Imprimir',
+				iconCls : 'bprint',
+				disabled : true,
+				handler : this.imprimirRecibo,
+				tooltip : '<b>Imprime Recibo</b><br/>Imprime Recibo'
+			});
+			
+		//Muestra las facturas 	
+		 this.addButton('btnFactura',{ 
+       	    text: 'Facturas', 
+       	    iconCls: 'blist', 
+       	    disabled: false, 
+       	    handler: this.mostraFactura, 
+       	    tooltip: 'Muestra Facturas'});
+       	    
+       	 	  ///1D			18/09/2018	 EGS  
+       	 this.addButton('btnCobro',{ 
+       	    text: 'Cobros', 
+       	    iconCls: 'blist', 
+       	    disabled: false, 
+       	    handler: this.mostraCobro, 
+       	    tooltip: 'reporte de cobros'});
+       	  ///1D			18/09/2018	 EGS   
+       	    
      
 
         this.iniciarEventos();
@@ -182,6 +222,15 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
 				fieldLabel: 'Nro.Tramite',
 				allowBlank: true,
 				anchor: '80%',
+				renderer:function (value,p,record){
+						
+						console.log('p',);
+						if(record.data.codigo_tipo_cobro_simple == record.data.globalanti && record.data.estado != "finalizado"){
+							return  String.format('<font size=2 color="red"><b>{0}</b></font>',  value);
+						}
+						return  String.format('<font >{0}</font>',  value);
+						
+					 },
 				gwidth: 160,
 				maxLength:100
 			},
@@ -246,7 +295,13 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
 				queryDelay: 1000,
 				resizable: true,
 				renderer : function(value, p, record) {
-					return String.format('{0}', record.data['desc_tipo_cobro_simple']);
+					///// 1C			13/08/2018   EGS	
+					if(record.data.codigo_tipo_cobro_simple == record.data.globalanti && record.data.estado != "finalizado"){
+							return  String.format('<font size=2 color="red"><b>{0}</b></font>',  record.data['desc_tipo_cobro_simple']);
+						}
+						return  String.format('<font >{0}</font>',  record.data['desc_tipo_cobro_simple']);
+					
+					/// 1C			13/08/2018   EGS	
 				}
 			},
 			type:'ComboBox',
@@ -255,6 +310,82 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
 			grid:true,
 			form:true
 		},
+				////////////EGS-I-22/08/2018///    1A	
+		{
+			config:{
+				name:'id_int_comprobante',
+				fieldLabel:'ID-Comprobante',
+				emptyText:'Id comprobante...',
+				typeAhead: true,
+				lazyRender:true,
+				//allowBlank: true,
+				mode: 'remote',
+				gwidth: 180,
+				anchor: '100%',
+				store: new Ext.data.JsonStore({
+					url: '../../sis_contabilidad/control/IntComprobante/listarIntComprobanteCombo',
+					id: 'id_int_comprobante',
+					root: 'datos',
+					sortInfo:{
+						field: 'id_int_comprobante',
+						direction: 'ASC'
+					},
+					totalProperty: 'total',
+					fields: ['id_int_comprobante','estado_reg','nro_tramite','nro_cbte','fecha','beneficiario','glosa1'],
+					// turn on remote sorting
+					remoteSort: true,
+					baseParams:{par_filtro:'incbte.id_int_comprobante#incbte.nro_tramite#incbte.nro_cbte#incbte.fecha#incbte.beneficiario#incbte.glosa1', estado_reg:'validado',clase_comprobante:'ingreso',clase_comprobante1:'diario'
+					
+					}
+				}),
+				tpl:'<tpl for=".">\
+		                       <div class="x-combo-list-item"><p><b>ID Comprobante:</b>{id_int_comprobante}, <b>Nro Tramite: </b>{nro_tramite}</p>\
+		                       <p><b>Nro Comprobante: </b>{nro_cbte},<b> Fecha:</b> {fecha}</p>\
+		                     <p><b>Beneficiario: </b>{beneficiario} </p><p><b>Glosa </b>{glosa1} </p></div></tpl>',
+		                       
+				valueField: 'id_int_comprobante',
+				displayField: 'id_int_comprobante',
+				gdisplayField: 'id_int_comprobante',
+				hiddenName: 'id_int_comprobante',
+				forceSelection: true,
+				typeAhead: false,
+				triggerAction: 'all',
+				lazyRender: true,
+				mode:'remote',
+				pageSize: 10,
+				queryDelay: 1000,
+				resizable: true,
+				minChars:1,
+				renderer : function(value, p, record) {
+					return String.format('{0}', record.data['id_int_comprobante']);
+				}
+			},
+			type:'ComboBox',
+			id_grupo:1,
+			filters:{pfiltro:'pagsim.id_int_comprobante',type:'string'},
+			grid:true,
+			form:true,
+			bottom_filter:true
+		},
+		
+		{
+			config:{
+				name: 'nro_cbte',
+				fieldLabel: 'Comprobante',
+				allowBlank: true,
+				anchor: '80%',
+				gwidth: 100,
+				maxLength:60
+			},
+				type:'TextField',
+				filters:{pfiltro:'cbte.nro_cbte',type:'string'},
+				id_grupo:0,
+				grid:true,
+				form:false,
+				bottom_filter:true
+		},
+		
+		////////////EGS-F-22/08/2018///    1A	
 		{
    			config:{
        		    name:'id_funcionario',
@@ -464,7 +595,13 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
 				allowBlank: true,
 				anchor: '80%',
 				gwidth: 100,
-				maxLength:30
+				maxLength:30,
+			   renderer:function(value, p, record){
+					if(record.data.codigo_tipo_cobro_simple == record.data.globalanti && record.data.estado != "finalizado"){
+							return  String.format('<font size=2 color="red"><b>{0}</b></font>',  value);
+						}
+						return  String.format('<font >{0}</font>',  value);
+					}
 			},
 				type:'TextField',
 				filters:{pfiltro:'pagsim.estado',type:'string'},
@@ -735,14 +872,23 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
 		{name:'id_caja', type: 'numeric'},
 		{name:'desc_caja', type: 'string'},
 		{name:'id_gestion', type: 'numeric'},
-		{name:'id_periodo', type: 'numeric'},'tipo_cambio',
+		{name:'id_periodo', type: 'numeric'},
+		{name:'id_int_comprobante', type: 'numeric'}, ////////////EGS-I-21/08/2018///    1A	
+        
+        {name:'globalcomun', type: 'string'},
+		{name:'globalretgar', type: 'string'},
+		{name:'globalanti', type: 'string'},
+
+        
+        'tipo_cambio',
         'tipo_cambio_mt',
         'tipo_cambio_ma',
         'id_config_cambiaria',
         'importe_mt',
         'importe_mb',
         'importe_ma',
-        'forma_cambio'
+        'forma_cambio', 
+        'nro_cbte'		////////////EGS-I-21/08/2018///    1A	
 		
 		
 		
@@ -914,7 +1060,14 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
 	                tooltip: '<b>Muestra el reporte gantt facil de entender</b>',
 	                handler:this.diagramGanttDinamico,
 	                scope: this
-	            }]
+	            },
+	             {
+                id:'b-ganttJs-' + this.idContenedor,
+                text: 'Gantt JS',
+                tooltip: '<b>Muestra el reporte </b>',
+                handler:this.diagramGanttJs,
+                scope: this
+            	}]
             }
         });
 		this.tbar.add(this.menuAdqGantt);
@@ -936,13 +1089,24 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
 		var data=this.sm.getSelected().data.id_proceso_wf;
 		window.open('../../../sis_workflow/reportes/gantt/gantt_dinamico.html?id_proceso_wf='+data)		
 	},
+	
+	//gantt con js improvide
+	 diagramGanttJs : function(){			
+		var data=this.sm.getSelected().data.id_proceso_wf;
+		window.open('../../../sis_workflow/reportes/gantt/gantt_jsgantt.html?id_proceso_wf='+data)		
+	},
+	
+
 
 	preparaMenu: function(n) {
 
 		var data = this.getSelectedData();
 		var tb = this.tbar;
 		Phx.vista.CobroSimple.superclass.preparaMenu.call(this, n);
-
+		
+       
+        
+        
 		this.getBoton('ant_estado').disable();
 		this.getBoton('sig_estado').disable();
 
@@ -976,10 +1140,16 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
         this.getBoton('diagrama_gantt').enable();
         this.getBoton('btnObs').enable();
         this.getBoton('btnChequeoDocumentosWf').enable();
-
-       
+         
+        //boton de recibo
+        this.getBoton('btnRecibo').enable();
+        this.getBoton('btnFactura').enable();
+          
 		//agregado
-        this.getBoton('btnDetalleDocumentoCobroSimple').enable();
+        //this.getBoton('btnDetalleDocumentoCobroSimple').enable();
+        
+       
+        
 
         
 		return tb
@@ -996,9 +1166,14 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
             this.getBoton('btnChequeoDocumentosWf').disable();
             
             
-            this.getBoton('btnDetalleDocumentoCobroSimple').disable();
-              
+           // this.getBoton('btnDetalleDocumentoCobroSimple').disable();
+            
+           
 		}
+		//boton recibo
+            this.getBoton('btnRecibo').disable();
+            this.getBoton('btnFactura').disable();
+              
 		return tb
 	},
 	loadCheckDocumentosSolWf:function() {
@@ -1082,6 +1257,60 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
             scope: this
         });
     },
+    
+    
+    	imprimirRecibo : function() {
+			var rec = this.sm.getSelected();
+			var data = rec.data;
+			if (data) {
+				Phx.CP.loadingShow();
+				Ext.Ajax.request({
+					url : '../../sis_cobros/control/CobroRecibo/cobroRecibo',
+					params : {
+						'id_proceso_wf' : data.id_proceso_wf
+					},
+					success : this.successExport,
+					failure : this.conexionFailure,
+					timeout : this.timeout,
+					scope : this
+				});
+			}
+
+		},
+		
+		mostraFactura: function(){
+		var data = this.getSelectedData();
+		var win = Phx.CP.loadWindows(
+			'../../../sis_cobros/vista/factura/FormFiltro.php',
+			'Facturas', {
+			    width: '80%',
+			    height: '70%'
+			},
+			data,
+			this.idContenedor,
+			'FormFiltro'//clase de la vista
+		);
+	},
+	
+			///1D			18/09/2018	 EGS  
+		mostraCobro: function(){
+		var data = this.getSelectedData();
+		var win = Phx.CP.loadWindows(
+			'../../../sis_cobros/vista/factura/FormFiltroCobro.php',
+			'Filtro Cobro', {
+			    width: '80%',
+			    height: '70%'
+			},
+			data,
+			this.idContenedor,
+			'FormFiltroCobro'//clase de la vista
+			);
+		},
+		
+		///1D			18/09/2018	 EGS  
+		
+		
+		
     successAntEstado:function(resp){
         Phx.CP.loadingHide();
         resp.argument.wizard.panel.destroy()
@@ -1113,8 +1342,139 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
         }, this);
 			
 			
-	    this.Cmp.forma_cambio.on('select', function(){ this.getConfigCambiaria('si') }, this);
+	  
+	    		
+
+	  this.Cmp.forma_cambio.on('select', function(){ this.getConfigCambiaria('si') }, this);
+	  
+	  ////////////EGS-I-21/08/2018///    1A	
+	    
+	 this.ocultarComponente(this.Cmp.id_int_comprobante);
+	
+	 this.obtenerVariableGlobal();
+	 this.obtenerVariableGlobal2();
+	 this.obtenerVariableGlobal3();
+	
+	  this.Cmp.id_tipo_cobro_simple.on('select',function(combo,record,index){
+			  //console.log(record.data.codigo);
+			  //console.log(this.codigo_comun);
+			  //console.log(this.codigo_retgar);
+	  		  //console.log(this.codigo_anticipo);	
+	  		 this.Cmp.id_int_comprobante.reset();
+	  		 
+				if(record.data.codigo == this.codigo_comun ||record.data.codigo == this.codigo_retgar  ||record.data.codigo ==this.codigo_anticipo){
+					
+						this.mostrarComponente(this.Cmp.id_int_comprobante);
+						this.Cmp.id_int_comprobante.allowBlank=false;
+						
+			
+				} else{
+					
+						this.ocultarComponente(this.Cmp.id_int_comprobante);
+						this.Cmp.id_int_comprobante.allowBlank=true;
+						
+
+				} 
+			},this);
+			
+		
+	 this.ocultarComponente(this.Cmp.id_int_comprobante);
     },
+    
+      obtenerVariableGlobal: function(config){
+
+            Phx.CP.loadingShow();
+            Ext.Ajax.request({
+                url:'../../sis_seguridad/control/Subsistema/obtenerVariableGlobal',
+                params:{
+                    codigo: 'v_cobro_comun'
+                },
+                success: function(resp){
+                	 Phx.CP.loadingHide();
+                     var reg = Ext.util.JSON.decode(Ext.util.Format.trim(resp.responseText));
+
+                    if (reg.ROOT.error) {
+                        Ext.Msg.alert('Error','Error a recuperar la variable global')
+                    } else {
+                        var codigo = reg.ROOT.datos.valor;
+                        var regularizado = codigo.split(",");   
+                        //console.log(regularizado[1]); 
+     					this.codigo_comun=regularizado[1];
+     					//console.log('comun',this.codigo_comun);
+                
+                   }
+                },
+                failure: this.conexionFailure,
+                timeout: this.timeout,
+                scope:this
+            });
+ 
+        },
+        
+         obtenerVariableGlobal2: function(config){
+
+         Phx.CP.loadingShow();
+        
+         Ext.Ajax.request({
+         		    url:'../../sis_seguridad/control/Subsistema/obtenerVariableGlobal',
+		
+		 params:{
+			           codigo: 'v_cobro_retencion_garantia'
+				 },
+		         success: function(resp){
+			             	 Phx.CP.loadingHide();
+					          var reg = Ext.util.JSON.decode(Ext.util.Format.trim(resp.responseText));
+						      if (reg.ROOT.error) {
+							            Ext.Msg.alert('Error','Error a recuperar la variable global')
+							  } else {
+										
+										 //console.log(reg.ROOT.datos.valor);
+										 var codigo = reg.ROOT.datos.valor;
+										 var regularizado_gat = codigo.split(","); 
+										 this.codigo_retgar=regularizado_gat[1];  
+									
+								}
+				 },
+				failure: this.conexionFailure,
+				timeout: this.timeout,
+				scope:this
+			});
+	  			
+        },
+         obtenerVariableGlobal3: function(config){
+
+         Phx.CP.loadingShow();
+        
+         Ext.Ajax.request({
+         		    url:'../../sis_seguridad/control/Subsistema/obtenerVariableGlobal',
+		
+		 params:{
+			           codigo: 'v_cobro_anticipo'
+				 },
+		         success: function(resp){
+			             	 Phx.CP.loadingHide();
+					          var reg = Ext.util.JSON.decode(Ext.util.Format.trim(resp.responseText));
+						      if (reg.ROOT.error) {
+							            Ext.Msg.alert('Error','Error a recuperar la variable global')
+							  } else {
+									  
+							 													
+										 //console.log(reg.ROOT.datos.valor);
+										 var codigo = reg.ROOT.datos.valor;
+										 var regularizado_anticipo = codigo.split(","); 
+										 this.codigo_anticipo=regularizado_anticipo[1];  
+									
+								}
+				 },
+				failure: this.conexionFailure,
+				timeout: this.timeout,
+				scope:this
+			});
+	  			
+        },
+        ////////////EGS-F-21/08/2018///  1A		
+    
+    
     
     manejoComponentes : function (codigo,reset) {
     	//Oculta os componentespor defecto,luego en funcion del caso se los habilita/deshabilita
@@ -1182,9 +1542,16 @@ Phx.vista.CobroSimple=Ext.extend(Phx.gridInterfaz,{
     	var rec=this.sm.getSelected();
     	
     	Phx.vista.CobroSimple.superclass.onButtonEdit.call(this);     	
-    	this.manejoComponentes(rec.data.codigo_tipo_cobro_simple,'no');  	
+    	this.manejoComponentes(rec.data.codigo_tipo_cobro_simple,'no');  
+    	this.Cmp.id_tipo_cobro_simple.disable(true);	
     	
     }, 
+    	onButtonNew: function(){
+		Phx.vista.CobroSimple.superclass.onButtonNew.call(this);
+		this.Cmp.id_tipo_cobro_simple.enable(true);
+		
+		
+	},
     
     getConfigCambiaria : function(sw_valores) {
 

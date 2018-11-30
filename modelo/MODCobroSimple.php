@@ -5,6 +5,10 @@
 *@author  (admin)
 *@date 31-12-2017 12:33:30
 *@description Clase que envia los parametros requeridos a la Base de datos para la ejecucion de las funciones, y que recibe la respuesta del resultado de la ejecucion de las mismas
+ *  ISSUE			FECHA		AUTOR					DESCRIPCION
+ *   *1A			21/08/2018		EGS					Se aumentaron campos en las funciones listarCobroSimple() ,insertarCobroSimple(),modificarCobroSimple 
+
+ * 
 */
 
 class MODCobroSimple extends MODbase{
@@ -76,8 +80,16 @@ class MODCobroSimple extends MODbase{
 		$this->captura('importe_mb','numeric');
 		$this->captura('importe_ma','numeric');
 		$this->captura('forma_cambio','varchar');
+		$this->captura('id_int_comprobante','int4'); ////////////EGS-I-21/08/2018///    1A	
+		$this->captura('nro_cbte','varchar');     ////////////EGS-I-21/08/2018///    1A	
 		
-        
+        			
+		// 1B 			13/09/2018		EGS	
+        $this->captura('globalComun','varchar');
+		$this->captura('globalRetgar','varchar');
+		$this->captura('globalAnti','varchar');
+		
+		/// 1B 			13/09/2018		EGS	
 		
 		
 		//Ejecuta la instruccion
@@ -113,6 +125,8 @@ class MODCobroSimple extends MODbase{
 		$this->setParametro('importe','importe','numeric');
 		$this->setParametro('id_obligacion_pago','id_obligacion_pago','int4');
 		$this->setParametro('id_caja','id_caja','int4');
+		
+		$this->setParametro('id_int_comprobante','id_int_comprobante','int4');////////////EGS-I-21/08/2018///    1A	
 		
 		 
 		$this->setParametro('tipo_cambio','tipo_cambio','numeric');
@@ -157,6 +171,7 @@ class MODCobroSimple extends MODbase{
 		$this->setParametro('id_obligacion_pago','id_obligacion_pago','int4');
 		$this->setParametro('id_caja','id_caja','int4');
 		
+		$this->setParametro('id_int_comprobante','id_int_comprobante','int4'); ////////////EGS-I-21/08/2018///    1A
 		
 		$this->setParametro('tipo_cambio','tipo_cambio','numeric');
 		$this->setParametro('tipo_cambio_ma','tipo_cambio_ma','numeric');
