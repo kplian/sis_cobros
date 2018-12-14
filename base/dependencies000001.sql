@@ -1,8 +1,6 @@
 /***********************************I-DEP-RAC-CBR-0-02/05/2018*****************************************/
 
 
-
-
 CREATE OR REPLACE VIEW cbr.vcobro_simple_cbte(
     id_cobro_simple,
     id_moneda,
@@ -61,9 +59,8 @@ AS
          per.fecha_fin;
          
          
-         
-         
- CREATE OR REPLACE VIEW cbr.vcobro_simple_det(
+--DROP VIEW cbr.vcobro_simple_det;
+CREATE OR REPLACE VIEW cbr.vcobro_simple_det(
     id_cobro_simple,
     id_moneda,
     id_depto_conta,
@@ -139,3 +136,57 @@ AS
 
 /***********************************F-DEP-EGS-CBR-0-24/10/2018*****************************************/
 
+
+/*****************************I-DEP-EGS-CBR-0-30/08/2018*************/
+
+select wf.f_import_ttipo_proceso_origen ('insert','CBRRE','CBRRE','CBTE','validado','manual','');
+
+
+/*****************************F-DEP-EGS-CBR-0-30/08/2018*************/
+
+/*****************************I-DEP-CAP-CBR-0-12/12/2018*************/
+--se movió del data
+CREATE OR REPLACE VIEW cbr.vcobro_simple_det(
+    id_cobro_simple,
+    id_moneda,
+    id_depto_conta,
+    id_depto_lb,
+    id_cuenta_bancaria,
+    id_funcionario,
+    id_proveedor,
+    id_proceso_wf,
+    id_estado_wf,
+    nro_tramite,
+    obs,
+    id_cobro_simple_det,
+    id_doc_compra_venta,
+    importe,
+    id_plantilla,
+    desc_dcv,
+    codigo_aplicacion)
+AS
+  SELECT psd.id_cobro_simple,
+         ps.id_moneda,
+         ps.id_depto_conta,
+         ps.id_depto_lb,
+         ps.id_cuenta_bancaria,
+         ps.id_funcionario,
+         ps.id_proveedor,
+         ps.id_proceso_wf,
+         ps.id_estado_wf,
+         ps.nro_tramite,
+         ps.obs,
+         psd.id_cobro_simple_det,
+         dcv.id_doc_compra_venta,
+         psd.importe,
+         dcv.id_plantilla,
+         (('Doc: '::text || dcv.nro_documento::text) || ' del '::text) ||
+           dcv.fecha::character varying::text AS desc_dcv,
+         dcv.codigo_aplicacion
+  FROM cbr.tcobro_simple ps
+       JOIN cbr.tcobro_simple_det psd ON psd.id_cobro_simple =
+         ps.id_cobro_simple
+       JOIN conta.tdoc_compra_venta dcv ON dcv.id_doc_compra_venta =
+         psd.id_doc_compra_venta;
+
+/*****************************F-DEP-CAP-CBR-0-12/12/2018*************/

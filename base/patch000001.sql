@@ -102,3 +102,29 @@ CREATE TABLE cbr.tcobro_simple_det (
 WITH (oids = false);
 
 /***********************************F-SCP-RAC-CBR-1-02/05/2018****************************************/
+
+/***********************************I-DAT-EGS-CBR-07-03/05/2018*****************************************/
+
+CREATE TABLE cbr.tcobro_excel (
+  nro_documento VARCHAR(50),
+  fecha DATE,
+  importe_doc NUMERIC,
+  importe_mb NUMERIC,
+  concepto VARCHAR(500),
+  ceco VARCHAR(10000),
+  desc_proveedor VARCHAR(500)
+) INHERITS (pxp.tbase)
+WITH (oids = false);
+
+CREATE TABLE cbr.tcobro_excel_2 (
+  nro_documento VARCHAR(50),
+  fecha DATE,
+  importe_doc NUMERIC,
+  importe_mb NUMERIC,
+  concepto VARCHAR(500),
+  ceco VARCHAR(10000),
+  desc_proveedor VARCHAR(500)
+) INHERITS (pxp.tbase)
+WITH (oids = false);
+
+/***********************************F-DAT-EGS-CBR-07-03/05/2018*****************************************/
