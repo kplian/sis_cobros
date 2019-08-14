@@ -2,7 +2,9 @@
 // Extend the TCPDF class to create custom MultiRow
  /*ISSUE				FECHA			AUTHOR		  DESCRIPCION
  * 1B				24/08/2018			EGS				se hizo cambios para cobros regularizados y retencion de garantias 
-*/
+   #1		14/8/2019   EGS 		Corrección por actualización PHP 7, cambio de nombre a método
+  * 
+  * */
    
 class RCobroReporte extends ReportePDF {
 	var $datos_titulo;
@@ -79,7 +81,7 @@ class RCobroReporte extends ReportePDF {
 		$this->MultiRow($RowArray, false, 1);
 	}
 	//
-	function generarReporte($detalle,$tipo,$proveedor) {
+	function generarReporte1($detalle,$tipo,$proveedor) {//#1
 		$this->cobro = $detalle->getParameter('cobro');
 		$this->setFontSubsetting(false);
 		$this->AddPage();
@@ -304,7 +306,7 @@ class RCobroReporte extends ReportePDF {
 		//var_dump($proveedor);
 		if($this->objParam->getParametro('id_tipo_cobro_simple')!= ''){
 			$datos_tipo=$tipo->getParameter('tipo_cobro');
-			$tipo_nombre = strtoupper($datos_tipo[0][nombre]);
+			$tipo_nombre = strtoupper($datos_tipo[0]['nombre']);//#1
 			
 		}
 		
@@ -330,7 +332,7 @@ class RCobroReporte extends ReportePDF {
 			$datos_Proveedor =$proveedor->getParameter('proveedor');
 			
 		
-			$nombre_proveedor = $datos_Proveedor[0][desc_proveedor];
+			$nombre_proveedor = $datos_Proveedor[0]['desc_proveedor'];//#1
 				//var_dump($nombre_proveedor);
 			
 		}

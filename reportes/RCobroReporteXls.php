@@ -139,7 +139,7 @@ class RCobroReporteXls
 					
 					
 					 $dataTipo =$this->objParam->getParametro('tipo_cobro');
-					 $tipo_nombre= $dataTipo[0][nombre]	;
+					 $tipo_nombre= $dataTipo[0]['nombre']	;
 					
 		}
 		if($this->objParam->getParametro('id_proveedor')!=''){
@@ -148,7 +148,7 @@ class RCobroReporteXls
 					
 					 $dataProveedor =$this->objParam->getParametro('proveedor');
 					 //var_dump($dataProveedor);
-					 $nombre_proveedor= $dataProveedor[0][desc_proveedor]	;
+					 $nombre_proveedor= $dataProveedor[0]['desc_proveedor']	;
 					 
 					
 		}
