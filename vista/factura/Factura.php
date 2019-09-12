@@ -8,6 +8,7 @@
  * ISSUE				FECHA			AUTHOR		  DESCRIPCION
  * 1B				17/08/2018			EGS				se hizo cambios para cobros regularizados y retencion de garantias , se movio y se habilito columnas
  * 1C				20/09/2018			EGS				se aumento codigo para el campo id_contrato
+ * #3               12/09/2019          EGS             e habilito exportador de grilla
 */
 header("content-type: text/javascript; charset=UTF-8");
 ?>
@@ -1699,7 +1700,7 @@ Phx.vista.Factura = Ext.extend(Phx.gridInterfaz,{
 	bsave: false,
 	bnew: false,
 	bedit: false,
-	bexcel: false,
+	bexcel: true,//#3
 	
 	
 	//recibe los parametros del formulario 
