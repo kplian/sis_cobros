@@ -1,4 +1,10 @@
 <?php
+/*
+****************************************************************************************
+ ISSUE 	FECHA		AUTOR 		DESCRIPCION
+ #1		09/8/2019   RCM 		Corrección por actualización PHP 7, cambio de nombre a método
+****************************************************************************************
+*/
 // Extend the TCPDF class to create custom MultiRow
 class RCobroReporteFacturaTodo extends ReportePDF {
 	var $datos_titulo;
@@ -14,7 +20,7 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 	var $s4;
 	var $s5;
 	var $s6;
-	
+
 	var $t1;
 	var $t2;
 	var $t3;
@@ -29,7 +35,7 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 	var $signo="";
 	var $a="";
 	var $factura;
-	
+
 	function datosHeader ($detalle) {
 		$this->SetHeaderMargin(10);
 		$this->SetAutoPageBreak(TRUE, 10);
@@ -39,9 +45,9 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 		$this->SetMargins(10, 15, 5,10);
 	}
 
-	function Header() {		
+	function Header() {
 	}
-	//	
+	//
 	function generarCabecera(){
 		$conf_par_tablewidths=array(7,15,15,20,20,40,20,30,25,25,25);
 		$conf_par_tablenumbers=array(0,0,0,0,0,0,0,0,0,0);
@@ -71,14 +77,14 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 		$this->MultiRow($RowArray, false, 1);
 	}
 	//
-	function generarReporte($detalle) {
+	function generarReporte1($detalle) { //#1
 		$this->factura = $detalle->getParameter('factura');
 		$this->setFontSubsetting(false);
 		$this->AddPage();
 		$this->generarCuerpo($this->factura);
 	}
-	//		
-	function generarCuerpo($detalle){		
+	//
+	function generarCuerpo($detalle){
 		//function
 		$this->cab();
 		$count = 1;
@@ -93,7 +99,7 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 		$this->s5 = 0;
 		$this->imprimirLinea($val,$count,$fill);
 	}
-	//desde 
+	//desde
 	function imprimirLinea($val,$count,$fill){
 		$this->SetFillColor(224, 235, 255);
 		$this->SetTextColor(0);
@@ -101,34 +107,34 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 		$acreedor=0;
 		$var='';
 		$sw="0";
-		
+
 		$primero='';
 		$conteoFactura=0;
 		//var_dump($this->factura);
 		foreach ($this->factura as $datarow) {
-			//var_dump($datarow); 
+			//var_dump($datarow);
 			$cobroFactura=$datarow['importe_cobro_factura'];
-			$saldo = $saldo - $cobroFactura ;				
+			$saldo = $saldo - $cobroFactura ;
 						$originalDate = $datarow['fecha'];
 						$newDate = date("d/m/Y", strtotime($originalDate));
-						
-						
+
+
 						if ($datarow['fecha_ultimo_pago']!= ''){
 							$originalDateUP = $datarow['fecha_ultimo_pago'];
 							$newDateUP = date("d/m/Y", strtotime($originalDateUP));
 						}else{
 							$newDateUP=$datarow['fecha_ultimo_pago'];
 						}
-							
+
 						//var_dump($newDateUP);
-						$this->tablealigns=array('C','C','C','C','C','L','R','R','R','R','R','R');	// las alings de las tablas center left right		
+						$this->tablealigns=array('C','C','C','C','C','L','R','R','R','R','R','R');	// las alings de las tablas center left right
 						$this->tableborders=array('RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB'); // los bordes de la tabla right left top botton
 						$this->tablenumbers=array(0,0,0,0,0,0,0,0,2,0,2,2);
-						$this->tabletextcolor=array();	
-						
-						$importeDocTotal= ''.(string)(number_format($importeDocTotal, 2, '.', ',')).'';	
+						$this->tabletextcolor=array();
+
+						$importeDocTotal= ''.(string)(number_format($importeDocTotal, 2, '.', ',')).'';
 						$importeCobradoTotal= ''.(string)(number_format($importeCobradoTotal, 2, '.', ',')).'';
-						$importeSaldoTotal= ''.(string)(number_format($importeSaldoTotal, 2, '.', ',')).'';	
+						$importeSaldoTotal= ''.(string)(number_format($importeSaldoTotal, 2, '.', ',')).'';
 						$RowArray = array(
 							's0' =>$i+1,
 							's1' =>$newDate,
@@ -141,48 +147,48 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 							's8' =>$datarow['importe_doc'],
 							's9' =>$datarow['desc_moneda'],
 							's10' =>$datarow['importe_cobrado_mb'],
-							's11' =>	$datarow['saldo_por_cobrar'],			
+							's11' =>	$datarow['saldo_por_cobrar'],
 						);
-						$fill = !$fill;					
-						$this->total = $this->total -1;			
-						$i++;		
-						$this-> MultiRow($RowArray,$fill,0);			
-									
+						$fill = !$fill;
+						$this->total = $this->total -1;
+						$i++;
+						$this-> MultiRow($RowArray,$fill,0);
+
 						$conteoFactura=0;
 						$importeDocTotal=0;
 						$importeCobradoTotal=0;
 						$importeSaldoTotal=0;
-								
-		
+
+
 			$this->revisarfinPagina($datarow);
 			$primero =$datarow['razon_social'];
 		}
-		$this->cerrarCuadro();		
-		$this->cerrarCuadroTotal();			
+		$this->cerrarCuadro();
+		$this->cerrarCuadroTotal();
 		$this->tablewidths=$conf_par_tablewidths;
 		$this->tablealigns=$conf_par_tablealigns;
 		$this->tablenumbers=$conf_par_tablenumbers;
 		$this->tableborders=$conf_tableborders;
 		$this->tabletextcolor=$conf_tabletextcolor;
-	} 
+	}
 	//desde generarcuerpo
 	function revisarfinPagina($a){
 		$dimensions = $this->getPageDimensions();
 		$hasBorder = false;
 		$startY = $this->GetY();
 		$this->getNumLines($row['cell1data'], 90);
-		$this->calcularMontos($a);			
-		if ($startY > 190) {			
-			$this->cerrarCuadro();	
-		//$this->cerrarCuadroTotal();	//cuanto se usa total	
+		$this->calcularMontos($a);
+		if ($startY > 190) {
+			$this->cerrarCuadro();
+		//$this->cerrarCuadroTotal();	//cuanto se usa total
 		if($this->total!= 0){
 				$this->AddPage();
 				$this->generarCabecera();
-			}				
+			}
 		}
 	}
 	//
-	function Footer() {		
+	function Footer() {
 		$this->setY(-15);
 		$ormargins = $this->getOriginalMargins();
 		$this->SetTextColor(0, 0, 0);
@@ -206,22 +212,22 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 		//var_dump($val['importe_doc']);
 		$this->s1 = $this->s1 + $val['importe_doc'];
 		$this->s2 = $this->s2 + $val['importe_cobrado_mb'];
-		$this->s3 = $this->s3 + $val['saldo_por_cobrar'];					
-		$this->t1=$this->t1+$val['importe_doc'];			
+		$this->s3 = $this->s3 + $val['saldo_por_cobrar'];
+		$this->t1=$this->t1+$val['importe_doc'];
 		$this->t2=$this->t2+$val['importe_cobrado_mb'];
 		$this->t3=$this->t3+$val['saldo_por_cobrar'];
-	}	
+	}
 	//revisarfinPagina pie
-	function cerrarCuadro(){		
-	
-		$conf_par_tablewidths=array(7,60,15,30,30,30,30,30,30);			
-		$this->tablealigns=array('R','R','R','R','R','R','R','R','R','R','R','R');		
-		
-		$this->tableborders=array('T','T','T','T','T','T','T','T','LRTB','','LRTB','LRTB');	
+	function cerrarCuadro(){
+
+		$conf_par_tablewidths=array(7,60,15,30,30,30,30,30,30);
+		$this->tablealigns=array('R','R','R','R','R','R','R','R','R','R','R','R');
+
+		$this->tableborders=array('T','T','T','T','T','T','T','T','LRTB','','LRTB','LRTB');
 		/*
-		$this->s1= ''.(string)(number_format($this->s1, 2, '.', ',')).'';	
+		$this->s1= ''.(string)(number_format($this->s1, 2, '.', ',')).'';
 		$this->s2= ''.(string)(number_format($this->s2, 2, '.', ',')).'';
-		$this->s3= ''.(string)(number_format($this->s3, 2, '.', ',')).'';						
+		$this->s3= ''.(string)(number_format($this->s3, 2, '.', ',')).'';
 		*/
 		$RowArray = array(  's0' => '',
 							's1' => '',
@@ -231,12 +237,12 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 							's5' => '',
 							's6' => '',
 							'espacio' => 'Subtotal',
-							's7' => $this->s1, 
+							's7' => $this->s1,
 							's8' => '',
 							's9' => $this->s2,
 							's10' => $this->s3,
-							
-						);		
+
+						);
 		$this-> MultiRow($RowArray,false,1);
 		$this->s1 = 0;
 		$this->s2 = 0;
@@ -246,26 +252,26 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 	}
 	//revisarfinPagina pie
 	function cerrarCuadroTotal(){
-		$conf_par_tablewidths=array(7,60,15,30,30,30,30,30,30);					
-		$this->tablealigns=array('R','R','R','R','R','R','R','R','R','R','R','R');		
+		$conf_par_tablewidths=array(7,60,15,30,30,30,30,30,30);
+		$this->tablealigns=array('R','R','R','R','R','R','R','R','R','R','R','R');
 		$this->tablenumbers=array(0,0,0,0,0,0,0,0,2,0,2,2);
 		$this->tableborders=array(' ','','','','','','','','LRTB','','LRTB','LRTB');	//dibuja las celdas q se habbilitan en el total
-		
-		//$this->t1= ''.(string)(number_format($this->t1, 2, '.', ',')).'';	
+
+		//$this->t1= ''.(string)(number_format($this->t1, 2, '.', ',')).'';
 		//$this->t2= ''.(string)(number_format($this->t2, 2, '.', ',')).'';
-		//$this->t3= ''.(string)(number_format($this->t3, 2, '.', ',')).'';	
-		  
-		 
+		//$this->t3= ''.(string)(number_format($this->t3, 2, '.', ',')).'';
+
+
 		 /*
 		if(($this->t3)<0){
 			$this->t3=($this->t3)*-1;
 			$this->t3= '('.(string)(number_format($this->t3, 2, '.', ',')).')';
-			$this->tablenumbers=array(0,0,0,0,2,2,0);		
+			$this->tablenumbers=array(0,0,0,0,2,2,0);
 		}else{
 			$this->tablenumbers=array(0,0,0,0,0,0,2);
-		}	*/							
+		}	*/
 		$RowArray = array(
-					't0' => '', 
+					't0' => '',
 					't1' => '',
 					't2' => '',
 					't3' => '',
@@ -277,11 +283,11 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 					't8' => '',
 					't9' => $this->t2,
 					't10' => $this->t3,
-					
+
 				);
 		$this-> MultiRow($RowArray,false,1);
 	}
-	
+
 	function cab() {
 		$var = array();
 		$desc = array();
@@ -290,29 +296,29 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 		$this->Ln(3);
 		$this->Image(dirname(__FILE__).'/../../lib/imagenes/logos/logo.jpg', 10,5,40,20);
 		$this->ln(5);
-		$this->SetFont('','B',12);		
-		$this->Cell(0,5,"Facturas",0,1,'C');					
-		$this->Ln(3);		
+		$this->SetFont('','B',12);
+		$this->Cell(0,5,"Facturas",0,1,'C');
+		$this->Ln(3);
 		/*
 		if($this->objParam->getParametro('desde')!=null){
 			$desde = $this->objParam->getParametro('desde');
 			array_push($var,$desde);
 			array_push($desc,'DESDE:');
-			$cant++;	
+			$cant++;
 		}*/
-		//				
+		//
 		//$height = 1;
 		//$width1 = 5;
 		$esp_width = 5;
 		$width_c1= 30;
-		$width_c2= 50;	
+		$width_c2= 50;
 		for($i=0;$i<=$cant;$i++){
 			$this->SetFont('', 'B',6);
 			$this->SetFillColor(192,192,192, false);
 			if($i%2==0){
 				$this->Cell($width1, $height, '', 0, 0, 'L', false, '', 0, false, 'T', 'C');
 				$this->Cell($width_c1, $height, $desc[$i], 0, 0, 'L', false, '', 0, false, 'T', 'C');
-				$this->SetFont('', '',6);				
+				$this->SetFont('', '',6);
 				$this->Cell($width_c2, $height, $var[$i], 0, 0, 'L', true, '', 0, false, 'T', 'C');
 			}else{
 				$this->Cell($esp_width, $height, '', 0, 0, 'L', false, '', 0, false, 'T', 'C');
@@ -320,12 +326,12 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 				$this->SetFont('', '',6);
 				$this->Cell(50, $height, $var[$i], 0, 0, 'L', true, '', 0, false, 'T', 'C');
 				$this->Ln();
-			}			
+			}
 		}
-					
+
 		$this->Ln(4);
 		$this->SetFont('','B',6);
 		$this->generarCabecera();
-	}	
+	}
 }
 ?>

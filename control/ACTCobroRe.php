@@ -5,11 +5,10 @@
 *@author  (admin)
 *@date 31-12-2017 12:33:30
 *@description Clase que recibe los parametros enviados por la vista para mandar a la capa de Modelo
- * ISSUE			FECHA		AUTOR					DESCRIPCION
- 
- * 
- * 
- * 
+ ****************************************************************************************
+ ISSUE 	FECHA		AUTOR 		DESCRIPCION
+ #1		14/8/2019   EGS 		Corrección por actualización PHP 7, cambio de nombre a método
+****************************************************************************************
 */
 
 require_once(dirname(__FILE__).'/../../pxp/pxpReport/DataSource.php');
@@ -303,7 +302,7 @@ class ACTCobroRe extends ACTbase{
 		
 		$reporte->datosHeader($dataSource);
 	
-		$reporte->generarReporte($dataSource,$dataTipo,$dataProveedor);
+		$reporte->generarReporte1($dataSource,$dataTipo,$dataProveedor);//#1
 		$reporte->output($reporte->url_archivo,'F');
 		
 		$this->mensajeExito=new Mensaje();
