@@ -14,12 +14,12 @@ $body$
  DESCRIPCION:   Funcion que devuelve conjuntos de registros de las consultas relacionadas con la tabla 'cbr.tcobro_simple'
  AUTOR:          (admin)
  FECHA:         31-12-2017 12:33:30
- COMENTARIOS:   
+ COMENTARIOS:
 ***************************************************************************
  HISTORIAL DE MODIFICACIONES:
 #ISSUE              FECHA               AUTOR               DESCRIPCION
- #0             31-12-2017 12:33:30          rac                     Funcion que devuelve conjuntos de registros de las consultas relacionadas con la tabla 'cbr.tcobro_simple'    
- #1             21/08/2018              EGS				se modifico las  transacciones CBR_PAGSIM_SEL , CBR_PAGSIM_CONT 
+ #0             31-12-2017 12:33:30          rac                     Funcion que devuelve conjuntos de registros de las consultas relacionadas con la tabla 'cbr.tcobro_simple'
+ #1             21/08/2018              EGS				se modifico las  transacciones CBR_PAGSIM_SEL , CBR_PAGSIM_CONT
  #2				13/09/2018				EGS				se modifico la transaccion CBR_PAGSIM_SEL y se declaro variables
  ***************************************************************************/
 
@@ -35,7 +35,7 @@ DECLARE
     v_inner             varchar;
     v_strg_cd           varchar;
     v_strg_obs          varchar;
-    
+
     v_id_moneda_base	integer;
     v_id_moneda_tri	    integer;
      v_registro_moneda	record;
@@ -43,27 +43,27 @@ DECLARE
     v_codigo_moneda_base		varchar;
     v_desde				varchar;
     v_hasta				varchar;
-    
+
       -- #2				13/09/2018				EGS
      v_bandera				 varchar;
      v_bandera_rg 			 varchar;
      v_bandera_ant			 varchar;
-    -- #2				13/09/2018				EGS		     
-                
+    -- #2				13/09/2018				EGS
+
 BEGIN
 
     v_nombre_funcion = 'cbr.ft_cobro_simple_sel';
     v_parametros = pxp.f_get_record(p_tabla);
 
-    /*********************************    
+    /*********************************
     #TRANSACCION:  'CBR_PAGSIM_SEL'
     #DESCRIPCION:   Consulta de datos
-    #AUTOR:     admin   
+    #AUTOR:     admin
     #FECHA:     31-12-2017 12:33:30
     ***********************************/
 
     if(p_transaccion='CBR_PAGSIM_SEL')then
-                    
+
         begin
 			 -- variables globales para que lleguen a redender de los campos en la vista
              --#2				13/09/2018				EGS
@@ -71,9 +71,10 @@ BEGIN
              v_bandera_rg = split_part(pxp.f_get_variable_global('v_cobro_retencion_garantia'), ',', 1);
              v_bandera_ant = split_part(pxp.f_get_variable_global('v_cobro_anticipo'), ',', 1);
              -- #2				13/09/2018				EGS
-           
+
 
             --Filtros
+            v_parametros.ordenacion = replace(v_parametros.ordenacion,'id_int_comprobante','pagsim.id_int_comprobante');
             v_filtro='';
 
             if pxp.f_existe_parametro(p_tabla,'historico') then
@@ -83,9 +84,9 @@ BEGIN
             end if;
             /*
              if p_administrador != 1  then
-            	
+
             	 v_filtro = v_filtro || 'pagsim.id_usuario_reg in (54,218,447,304 )and';
-            
+
              END if;
 			*/
             if v_parametros.tipo_interfaz in ('PagoSimpleSol') then
@@ -102,7 +103,7 @@ BEGIN
                     if v_historico = 'no' then
                         v_filtro = v_filtro || 'pagsim.estado in (''borrador'') and ';
                     end if;
-                    
+
                 end if;
 
             elsif v_parametros.tipo_interfaz in ('PagoSimpleVb') then
@@ -114,7 +115,7 @@ BEGIN
                 end if;
 
             end if;
-			
+
              -- agregaron campos para variables globales para que lleguen a redender de los campos en la vista
             --Sentencia de la consulta
             v_consulta:='select
@@ -157,7 +158,7 @@ BEGIN
                             op.num_tramite as desc_obligacion_pago,
                             pagsim.id_caja,
                             caj.codigo as desc_caja,
-                            (select 
+                            (select
                             ges.id_gestion
                             from param.tgestion ges
                             where ges.gestion = (date_part(''year'', pagsim.fecha))::integer
@@ -167,7 +168,7 @@ BEGIN
                             from param.tperiodo
                             where pagsim.fecha between fecha_ini and fecha_fin
                             limit 1 offset 0) as id_periodo,
-                            
+
                             pagsim.tipo_cambio,
                             pagsim.tipo_cambio_mt,
                             pagsim.tipo_cambio_ma,
@@ -181,8 +182,8 @@ BEGIN
                             '''||v_bandera||'''::varchar as globalComun,
                             '''||v_bandera_rg||'''::varchar as globalRetgar,
                             '''||v_bandera_ant||'''::varchar as globalAnti
-                            
-                            
+
+
                         from cbr.tcobro_simple pagsim
                         inner join wf.testado_wf ew on ew.id_estado_wf = pagsim.id_estado_wf
                         inner join segu.tusuario usu1 on usu1.id_usuario = pagsim.id_usuario_reg
@@ -200,32 +201,32 @@ BEGIN
                         left join tes.tcaja caj on caj.id_caja = pagsim.id_caja
                         left join conta.tint_comprobante cbte on cbte.id_int_comprobante = pagsim.id_int_comprobante
                         where  ';
-                       
+
 
             v_consulta = v_consulta || v_filtro;
-            
+
             --Definicion de la respuesta
             v_consulta:=v_consulta||v_parametros.filtro;
             v_consulta:=v_consulta||' order by ' ||v_parametros.ordenacion|| ' ' || v_parametros.dir_ordenacion || ' limit ' || v_parametros.cantidad || ' offset ' || v_parametros.puntero;
 
             --Devuelve la respuesta
             return v_consulta;
-                        
+
         end;
-    /*********************************    
+    /*********************************
     #TRANSACCION:  'CBR_DETPAG_SEL'
     #DESCRIPCION:   Consulta de datos
-    #AUTOR:     JUAN    
+    #AUTOR:     JUAN
     #FECHA:     07-01-2018 12:33:30
     ***********************************/
 
     ELSIF(p_transaccion='CBR_DETPAG_SEL')then
-                    
+
         begin
 
 
             --Sentencia de la consulta
-            v_consulta:='SELECT 
+            v_consulta:='SELECT
                           cv.id_doc_compra_venta::INTEGER,
                           cv.id_funcionario::INTEGER,
                           (select vf.desc_funcionario1 from orga.tfuncionario f join orga.vfuncionario vf on vf.id_funcionario=f.id_funcionario where f.id_funcionario=cv.id_funcionario)::varchar desc_funcionario1,
@@ -237,26 +238,26 @@ BEGIN
                           cv.importe_excento::numeric,
                           cv.fecha::date fecha_compra_venta,
                           ps.fecha::date fecha_cobro_simple,
-                          cv.sw_pgs::varchar sw_pgs 
-                          FROM conta.tdoc_compra_venta cv 
+                          cv.sw_pgs::varchar sw_pgs
+                          FROM conta.tdoc_compra_venta cv
                           join cbr.tcobro_simple_det psd on psd.id_doc_compra_venta=cv.id_doc_compra_venta
                           join cbr.tcobro_simple ps on ps.id_cobro_simple= psd.id_cobro_simple
                           inner join wf.testado_wf ew on ew.id_estado_wf = ps.id_estado_wf
                         where  ';
 
-        
+
             --Definicion de la respuesta
             v_consulta:=v_consulta||v_parametros.filtro;
             v_consulta:=v_consulta||' order by ' ||v_parametros.ordenacion|| ' ' || v_parametros.dir_ordenacion || ' limit ' || v_parametros.cantidad || ' offset ' || v_parametros.puntero;
 
             --Devuelve la respuesta
             return v_consulta;
-                        
+
         end;
-    /*********************************    
+    /*********************************
     #TRANSACCION:  'CBR_DETPAG_CONT'
     #DESCRIPCION:   Conteo de registros
-    #AUTOR:     JUAN    
+    #AUTOR:     JUAN
     #FECHA:     07-01-2018 12:33:30
     ***********************************/
 
@@ -264,26 +265,26 @@ BEGIN
 
         begin
             --Sentencia de la consulta de conteo de registros
-            v_consulta:='SELECT 
+            v_consulta:='SELECT
                 count(cv.id_funcionario)
-                FROM conta.tdoc_compra_venta cv 
+                FROM conta.tdoc_compra_venta cv
                 join cbr.tcobro_simple_det psd on psd.id_doc_compra_venta=cv.id_doc_compra_venta
                 join cbr.tcobro_simple ps on ps.id_cobro_simple= psd.id_cobro_simple
                 inner join wf.testado_wf ew on ew.id_estado_wf = ps.id_estado_wf
                         where ';
-            
-            --Definicion de la respuesta            
+
+            --Definicion de la respuesta
             v_consulta:=v_consulta||v_parametros.filtro;
 
             --Devuelve la respuesta
             return v_consulta;
 
         end;
-        
-    /*********************************    
+
+    /*********************************
     #TRANSACCION:  'CBR_PAGSIM_CONT'
     #DESCRIPCION:   Conteo de registros
-    #AUTOR:     admin   
+    #AUTOR:     admin
     #FECHA:     31-12-2017 12:33:30
     ***********************************/
 
@@ -341,28 +342,28 @@ BEGIN
                         where ';
 
             v_consulta = v_consulta || v_filtro;
-            
-            --Definicion de la respuesta            
+
+            --Definicion de la respuesta
             v_consulta:=v_consulta||v_parametros.filtro;
 
             --Devuelve la respuesta
             return v_consulta;
 
         end;
-    /*********************************    
+    /*********************************
     #TRANSACCION:  'CBR_DEPASIMPLE_SEL'
     #DESCRIPCION:   Consulta de datos
-    #AUTOR:     JUAN    
+    #AUTOR:     JUAN
     #FECHA:     20-01-2018 12:33:30
     ***********************************/
 
     ELSIF(p_transaccion='CBR_DEPASIMPLE_SEL')then
-                    
+
         begin
 
             --raise exception 'error provocado %',v_parametros.id_cobro_simple;
             --Sentencia de la consulta
-            v_consulta:='select 
+            v_consulta:='select
                          id_doc_compra_venta::integer,
                          tipo::Varchar,
                          fecha::date,
@@ -392,7 +393,7 @@ BEGIN
                          sujeto_df::numeric,
                          importe_ice::numeric,
                          importe_excento::numeric
-                            
+
                          from conta.vldet_doc_pag_simple
                          where  id_cobro_simple='||v_parametros.id_cobro_simple||'  ';
 
@@ -400,22 +401,22 @@ BEGIN
             --Definicion de la respuesta
             --v_consulta:=v_consulta||v_parametros.filtro;
             --v_consulta:=v_consulta||' order by ' ||v_parametros.ordenacion|| ' ' || v_parametros.dir_ordenacion || ' limit ' || v_parametros.cantidad || ' offset ' || v_parametros.puntero;
-            
+
             --raise exception 'error provocado %',v_consulta;
             --Devuelve la respuesta
             return v_consulta;
-                        
+
         end;
-            
-                    
+
+
     else
-                         
+
         raise exception 'Transaccion inexistente';
-                             
+
     end if;
-                    
+
 EXCEPTION
-                    
+
     WHEN OTHERS THEN
             v_resp='';
             v_resp = pxp.f_agrega_clave(v_resp,'mensaje',SQLERRM);
