@@ -14,13 +14,13 @@ $body$
  DESCRIPCION:   Funcion que gestiona las operaciones basicas (inserciones, modificaciones, eliminaciones de la tabla 'cbr.tcobro_simple'
  AUTOR: 		 (admin)
  FECHA:	        31-12-2017 12:33:30
- COMENTARIOS:	
+ COMENTARIOS:
 ***************************************************************************
  HISTORIAL DE MODIFICACIONES:
 #ISSUE				FECHA				AUTOR				DESCRIPCION
- #0				31-12-2017 12:33:30								Funcion que gestiona las operaciones basicas (inserciones, modificaciones, eliminaciones de la tabla 'cbr.tcobro_simple'	
+ #0				31-12-2017 12:33:30								Funcion que gestiona las operaciones basicas (inserciones, modificaciones, eliminaciones de la tabla 'cbr.tcobro_simple'
  #1				21/08/2018				EGS					se aumento campos en la sentencia de insercion y modificacion en las transacciones CBR_PAGSIM_INS,CBR_PAGSIM_MOD
- 
+ #6				11/05/2020				EGS					Enviando parametros que necesita obligatoriamente en param.f_convertir_moneda por mejora en esa funcion
  ***************************************************************************/
 
 DECLARE
@@ -77,23 +77,23 @@ DECLARE
     v_id_moneda_act            integer;
     va_montos        	       numeric[];
     v_reg_cbte		           record;
-			    
+
 BEGIN
 
     v_nombre_funcion = 'cbr.ft_cobro_simple_ime';
     v_parametros = pxp.f_get_record(p_tabla);
 
-	/*********************************    
+	/*********************************
  	#TRANSACCION:  'CBR_PAGSIM_INS'
  	#DESCRIPCION:	Insercion de registros
- 	#AUTOR:		admin	
+ 	#AUTOR:		admin
  	#FECHA:		31-12-2017 12:33:30
 	***********************************/
 
 	if(p_transaccion='CBR_PAGSIM_INS')then
-					
+
         begin
-        
+
             v_id_moneda_base = param.f_get_moneda_base();
             v_id_moneda_tri = param.f_get_moneda_triangulacion();
             v_id_moneda_act = param.f_get_moneda_intercambio();
@@ -126,16 +126,16 @@ BEGIN
             if v_codigo_tipo_proceso is NULL THEN
                 raise exception 'No existe un proceso inicial para el proceso macro indicado % (Revise la configuración)',v_codigo_proceso_macro;
             end if;
-            
-            --jrr: si se genera a partir de una obligacion de pago 
+
+            --jrr: si se genera a partir de una obligacion de pago
 		if (v_parametros.id_int_comprobante is not null) then
             	--obtener datos op
             	select * into v_reg_cbte
                 from conta.tint_comprobante cbte
                 where cbte.id_int_comprobante = v_parametros.id_int_comprobante;
-                
+
                  -- disparar creacion de procesos seleccionados
-                      
+
                 SELECT
                          ps_id_proceso_wf,
                          ps_id_estado_wf,
@@ -148,18 +148,18 @@ BEGIN
                          p_id_usuario,
                          v_parametros._id_usuario_ai,
                          v_parametros._nombre_usuario_ai,
-                         v_reg_cbte.id_estado_wf, 
-                         v_parametros.id_funcionario, 
+                         v_reg_cbte.id_estado_wf,
+                         v_parametros.id_funcionario,
                          v_parametros.id_depto_conta,
                          'Solicitud de Cobro Simple',
-                         v_codigo_tipo_proceso,    
+                         v_codigo_tipo_proceso,
                          v_codigo_tipo_proceso);
                 --el num tramite es el mismo
                 v_num_tramite =  v_reg_cbte.nro_tramite;
             else
                 ---------------------------
                 --Inicio del tramite de WF
-                ---------------------------              
+                ---------------------------
 
                 --Obtencion de la gestion
                 select
@@ -192,23 +192,23 @@ BEGIN
                    v_parametros.id_depto_conta,
                    'Solicitud de Cobro simple',
                    '' );
-            end if;		
-            
+            end if;
+
             -- CALCULAR MONEDA BASE PARA LA FECHA
-            
+
              --validacion de tipos de cambios
             IF v_parametros.tipo_cambio is NULL or  v_parametros.tipo_cambio_mt is NULL or  v_parametros.tipo_cambio_ma is NULL THEN
               raise exception 'no se definieron los tipos de cambio';
             END IF;
-            
+
             IF  v_parametros.id_config_cambiaria is NULL  THEN
               raise exception 'la configuracion cambiara no puede ser nula';
             END IF;
-            
+
             v_id_moneda_base = param.f_get_moneda_base();
             v_id_moneda_tri = param.f_get_moneda_triangulacion();
             v_id_moneda_act = param.f_get_moneda_intercambio();
-            
+
              --------------------------------------------------------------------------
               --calcula los valor  en moneda base y triangulacion segun configuracion
               ------------------------------------------------------------------------
@@ -216,9 +216,9 @@ BEGIN
               v_monto_mb = va_montos[1];
               v_monto_mt = va_montos[2];
               v_monto_ma = va_montos[3];
-            
-            
-            	
+
+
+
 
         	--Sentencia de la insercion
         	insert into cbr.tcobro_simple(
@@ -242,7 +242,7 @@ BEGIN
 				id_proveedor,
 				id_moneda,
 				id_tipo_cobro_simple,
-				id_funcionario_pago,			
+				id_funcionario_pago,
 				importe,
 				id_obligacion_pago,
 				id_caja,
@@ -276,7 +276,7 @@ BEGIN
 				v_parametros.id_proveedor,
 				v_parametros.id_moneda,
 				v_parametros.id_tipo_cobro_simple,
-				v_parametros.id_funcionario_pago,			
+				v_parametros.id_funcionario_pago,
 				v_parametros.importe,
 				v_parametros.id_obligacion_pago,
 				v_parametros.id_caja,
@@ -290,9 +290,9 @@ BEGIN
                 v_parametros.forma_cambio,
                 v_parametros.id_int_comprobante  --EGS--1A
 			) RETURNING id_cobro_simple into v_id_cobro_simple;
-			
+
 			--Definicion de la respuesta
-			v_resp = pxp.f_agrega_clave(v_resp,'mensaje','Pago Simple almacenado(a) con exito (id_cobro_simple'||v_id_cobro_simple||')'); 
+			v_resp = pxp.f_agrega_clave(v_resp,'mensaje','Pago Simple almacenado(a) con exito (id_cobro_simple'||v_id_cobro_simple||')');
             v_resp = pxp.f_agrega_clave(v_resp,'id_cobro_simple',v_id_cobro_simple::varchar);
 
             --Devuelve la respuesta
@@ -300,21 +300,25 @@ BEGIN
 
 		end;
 
-	/*********************************    
+	/*********************************
  	#TRANSACCION:  'CBR_PAGSIM_MOD'
  	#DESCRIPCION:	Modificacion de registros
- 	#AUTOR:		admin	
+ 	#AUTOR:		admin
  	#FECHA:		31-12-2017 12:33:30
 	***********************************/
 
 	elsif(p_transaccion='CBR_PAGSIM_MOD')then
 
 		begin
-        
+        	--#6
+        	v_id_moneda_base = param.f_get_moneda_base();
+            v_id_moneda_tri = param.f_get_moneda_triangulacion();
+            v_id_moneda_act = param.f_get_moneda_intercambio();
+
         	select * into v_cobro_simple
             from cbr.tcobro_simple
             where id_cobro_simple = v_parametros.id_cobro_simple;
-            
+
             if (v_cobro_simple.estado != 'borrador') then
             	raise exception 'No se puede modificar un pago que no esta en estado borrador. Envie el pago a estado borrador para poder modificarlo';
             end if;
@@ -322,11 +326,11 @@ BEGIN
             if v_parametros.id_tipo_cobro_simple <> v_cobro_simple.id_tipo_cobro_simple then
             	raise exception 'No es posible cambiar el Tipo de Pago';
             end if;
-            
-            
-            --NO peude cambiar la moenda 
-            
-            
+
+
+            --NO peude cambiar la moenda
+
+
             --TODO CALCULAR MONEDA BASE PARA LA FECHA
             --------------------------------------------------------------------------
             --calcula los valor  en moneda base y triangulacion segun configuracion
@@ -335,9 +339,9 @@ BEGIN
               v_monto_mb = va_montos[1];
               v_monto_mt = va_montos[2];
               v_monto_ma = va_montos[3];
-              
+
              --verificar si peude cambiar el monto
-             select 
+             select
                  c.importe,
                  c.id_moneda,
                  c.fecha,
@@ -346,34 +350,34 @@ BEGIN
                  c.tipo_cambio_mt
                into
                  v_registros_doc
-             from  cbr.tcobro_simple c 
+             from  cbr.tcobro_simple c
              where c.id_cobro_simple = v_parametros.id_cobro_simple;
-              
-            
-            IF  v_registros_doc.id_moneda !=  v_parametros.id_moneda  or 
+
+
+            IF  v_registros_doc.id_moneda !=  v_parametros.id_moneda  or
                 v_registros_doc.importe  != v_parametros.importe  or
                 v_registros_doc.fecha  != v_parametros.fecha  or
                 v_registros_doc.tipo_cambio  != v_parametros.tipo_cambio  or
                 v_registros_doc.tipo_cambio_ma  != v_parametros.tipo_cambio_ma  or
                 v_registros_doc.tipo_cambio_mt  != v_parametros.tipo_cambio_mt  THEN
-            
+
                   --si alguno de estos datos varia vemos que no se tenga facturas registradas en el detalle
-                  
-                 IF EXISTS(select 
+
+                 IF EXISTS(select
                                1
                             from cbr.tcobro_simple_det csd
                             where     csd.id_cobro_simple = v_parametros.id_cobro_simple
                                   and csd.estado_reg = 'activo') THEN
-                         
-                            raise exception 'Para hacer esta moficiacón primero elimine las facturas del detalle';       
-                          
+
+                            raise exception 'Para hacer esta moficiacón primero elimine las facturas del detalle';
+
                   END IF;
-            
+
             END IF;
-            
-          
-            
-			
+
+
+
+
 			--Sentencia de la modificacion
 			update cbr.tcobro_simple set
                 id_depto_conta = v_parametros.id_depto_conta,
@@ -389,7 +393,7 @@ BEGIN
                 id_moneda = v_parametros.id_moneda,
                 id_proveedor = v_parametros.id_proveedor,
                 id_tipo_cobro_simple = v_parametros.id_tipo_cobro_simple,
-                id_funcionario_pago = v_parametros.id_funcionario_pago,			
+                id_funcionario_pago = v_parametros.id_funcionario_pago,
                 importe = v_parametros.importe,
                 id_obligacion_pago = v_parametros.id_obligacion_pago,
                 id_caja = v_parametros.id_caja,
@@ -403,20 +407,20 @@ BEGIN
                 forma_cambio = v_parametros.forma_cambio,
                 id_int_comprobante=v_parametros.id_int_comprobante   --EGS--1A
 			where id_cobro_simple=v_parametros.id_cobro_simple;
-               
+
 			--Definicion de la respuesta
-            v_resp = pxp.f_agrega_clave(v_resp,'mensaje','Cobro  Simple modificado(a)'); 
+            v_resp = pxp.f_agrega_clave(v_resp,'mensaje','Cobro  Simple modificado(a)');
             v_resp = pxp.f_agrega_clave(v_resp,'id_cobro_simple',v_parametros.id_cobro_simple::varchar);
-               
+
             --Devuelve la respuesta
             return v_resp;
-            
+
 		end;
 
-	/*********************************    
+	/*********************************
  	#TRANSACCION:  'CBR_PAGSIM_ELI'
  	#DESCRIPCION:	Eliminacion de registros
- 	#AUTOR:		admin	
+ 	#AUTOR:		admin
  	#FECHA:		31-12-2017 12:33:30
 	***********************************/
 
@@ -426,31 +430,31 @@ BEGIN
         	select * into v_cobro_simple
             from cbr.tcobro_simple
             where id_cobro_simple = v_parametros.id_cobro_simple;
-            
+
             if (v_cobro_simple.estado != 'borrador') then
             	raise exception 'No se puede eliminar un pago que no esta en estado borrador. Envie el pago a estado borrador para poder eliminarlo';
             end if;
-            
+
             --TODO  no peude eliminar un pago si tiene todumentos asociados primero pedir que elimine las asociaciones
-            
-             IF EXISTS(select 
+
+             IF EXISTS(select
                                1
                             from cbr.tcobro_simple_det csd
                             where     csd.id_cobro_simple = v_parametros.id_cobro_simple
                                   and csd.estado_reg = 'activo') THEN
-                         
-                            raise exception 'Para eliminar  primero elimine las facturas del detalle';       
-                          
+
+                            raise exception 'Para eliminar  primero elimine las facturas del detalle';
+
             END IF;
-            
+
 			--Sentencia de la eliminacion
 			delete from cbr.tcobro_simple
             where id_cobro_simple=v_parametros.id_cobro_simple;
-               
+
             --Definicion de la respuesta
-            v_resp = pxp.f_agrega_clave(v_resp,'mensaje','Pago Simple eliminado(a)'); 
+            v_resp = pxp.f_agrega_clave(v_resp,'mensaje','Pago Simple eliminado(a)');
             v_resp = pxp.f_agrega_clave(v_resp,'id_cobro_simple',v_parametros.id_cobro_simple::varchar);
-              
+
             --Devuelve la respuesta
             return v_resp;
 
@@ -464,7 +468,7 @@ BEGIN
 	***********************************/
 
   	elseif(p_transaccion='CBR_SIGEPS_INS')then
-        
+
         begin
 
 	        /*   PARAMETROS
@@ -639,7 +643,7 @@ BEGIN
 				end if;
 
 			end if;
-			
+
 
 
 			-- si hay mas de un estado disponible  preguntamos al usuario
@@ -760,11 +764,11 @@ BEGIN
   	elseif(p_transaccion='CBR_PSAGRDOC_IME')then
 
         begin
-        
+
         	select * into v_cobro_simple
             from cbr.tcobro_simple
             where id_cobro_simple = v_parametros.id_cobro_simple;
-            
+
             if (v_cobro_simple.estado not in ( 'borrador', 'rendicion','vbconta')) then
             	raise exception 'No se puede agregar documentos por|que no esta en estado Borrador, Rendicion o Vbconta. Envie el pago a dichos estados para poder modificarlo';
             end if;
@@ -819,7 +823,7 @@ BEGIN
         		else
         			v_where = ' 0=0';
         		end if;
-        		
+
         	else
         		v_where = 'dcv.id_usuario_reg = '||v_parametros.id_usuario;
 
@@ -881,22 +885,22 @@ BEGIN
             return v_resp;
 
         end;
-         
+
 	else
-     
+
     	raise exception 'Transaccion inexistente: %',p_transaccion;
 
 	end if;
 
 EXCEPTION
-				
+
 	WHEN OTHERS THEN
 		v_resp='';
 		v_resp = pxp.f_agrega_clave(v_resp,'mensaje',SQLERRM);
 		v_resp = pxp.f_agrega_clave(v_resp,'codigo_error',SQLSTATE);
 		v_resp = pxp.f_agrega_clave(v_resp,'procedimientos',v_nombre_funcion);
 		raise exception '%',v_resp;
-				        
+
 END;
 $body$
 LANGUAGE 'plpgsql'
