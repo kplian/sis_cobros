@@ -3,6 +3,7 @@
 ****************************************************************************************
  ISSUE 	FECHA		AUTOR 		DESCRIPCION
  #1		09/8/2019   RCM 		Corrección por actualización PHP 7, cambio de nombre a método
+* #7    16/06/2020  EGS         Se agrgan campos de importe
 ****************************************************************************************
 */
 // Extend the TCPDF class to create custom MultiRow
@@ -20,6 +21,7 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 	var $s4;
 	var $s5;
 	var $s6;
+
 
 	var $t1;
 	var $t2;
@@ -49,9 +51,9 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 	}
 	//
 	function generarCabecera(){
-		$conf_par_tablewidths=array(7,15,15,20,20,40,20,30,25,25,25);
-		$conf_par_tablenumbers=array(0,0,0,0,0,0,0,0,0,0);
-		$conf_par_tablealigns=array('C','C','C','C','C','C','C','C','C','C','C');
+		$conf_par_tablewidths=array(7,15,15,17,20,40,15,20,20,10,15,15,15,20,18);
+		$conf_par_tablenumbers=array(0,0,0,0,0,0,0,0,0,0,0,0,0);
+		$conf_par_tablealigns=array('C','C','C','C','C','C','C','C','C','C','C','C','C','C');// #7
 		$conf_tabletextcolor=array();
 		$this->tablewidths=$conf_par_tablewidths;
 		$this->tablealigns=$conf_par_tablealigns;
@@ -71,8 +73,11 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 							's7' => 'Autorizacion:',
 							's8' => 'Importe Doc',
 							's9' => 'Moneda:',
-							's10' => 'Importe Cobrado(BS):',
-							's11' => 'Saldo por Cobrar (BS):',
+                            's10' => 'Cuenta Pentiente:',// #7
+                            's11' => 'Ret. Garantia:',// #7
+                            's12' => 'Anticipo:',// #7
+							's13' => 'Importe Cobrado(BS):',
+							's14' => 'Saldo por Cobrar (BS):',
 						);
 		$this->MultiRow($RowArray, false, 1);
 	}
@@ -127,9 +132,9 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 						}
 
 						//var_dump($newDateUP);
-						$this->tablealigns=array('C','C','C','C','C','L','R','R','R','R','R','R');	// las alings de las tablas center left right
-						$this->tableborders=array('RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB'); // los bordes de la tabla right left top botton
-						$this->tablenumbers=array(0,0,0,0,0,0,0,0,2,0,2,2);
+						$this->tablealigns=array('C','C','C','C','C','L','R','R','R','R','R','R','R','R','R');	// las alings de las tablas center left right
+						$this->tableborders=array('RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB','RLTB'); // los bordes de la tabla right left top botton
+						$this->tablenumbers=array(0,0,0,0,0,0,0,0,2,0,0,0,0,2,2);
 						$this->tabletextcolor=array();
 
 						$importeDocTotal= ''.(string)(number_format($importeDocTotal, 2, '.', ',')).'';
@@ -146,8 +151,12 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 							's7' =>$datarow['nro_autorizacion'],
 							's8' =>$datarow['importe_doc'],
 							's9' =>$datarow['desc_moneda'],
-							's10' =>$datarow['importe_cobrado_mb'],
-							's11' =>	$datarow['saldo_por_cobrar'],
+                            's10' =>$datarow['importe_pendiente'],// #7
+                            's11' =>$datarow['importe_retgar'],// #7
+                            's12' =>$datarow['importe_anticipo'],// #7
+							's13' =>$datarow['importe_cobrado_mb'],
+							's14' =>$datarow['saldo_por_cobrar'],
+
 						);
 						$fill = !$fill;
 						$this->total = $this->total -1;
@@ -220,10 +229,11 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 	//revisarfinPagina pie
 	function cerrarCuadro(){
 
-		$conf_par_tablewidths=array(7,60,15,30,30,30,30,30,30);
-		$this->tablealigns=array('R','R','R','R','R','R','R','R','R','R','R','R');
+		$conf_par_tablewidths=array(7,15,15,17,20,40,15,20,20,10,15,15,15,20,20);
 
-		$this->tableborders=array('T','T','T','T','T','T','T','T','LRTB','','LRTB','LRTB');
+		$this->tablealigns=array('R','R','R','R','R','R','R','R','R','R','R','R','R','R','R');
+
+		$this->tableborders=array('T','T','T','T','T','T','T','T','LRTB','','','','','LRTB','LRTB');
 		/*
 		$this->s1= ''.(string)(number_format($this->s1, 2, '.', ',')).'';
 		$this->s2= ''.(string)(number_format($this->s2, 2, '.', ',')).'';
@@ -239,8 +249,11 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 							'espacio' => 'Subtotal',
 							's7' => $this->s1,
 							's8' => '',
-							's9' => $this->s2,
-							's10' => $this->s3,
+                            's10' => null,
+                            's11' => null,
+                            's12' => null,
+							's13' => $this->s2,
+							's14' => $this->s3,
 
 						);
 		$this-> MultiRow($RowArray,false,1);
@@ -253,9 +266,9 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 	//revisarfinPagina pie
 	function cerrarCuadroTotal(){
 		$conf_par_tablewidths=array(7,60,15,30,30,30,30,30,30);
-		$this->tablealigns=array('R','R','R','R','R','R','R','R','R','R','R','R');
-		$this->tablenumbers=array(0,0,0,0,0,0,0,0,2,0,2,2);
-		$this->tableborders=array(' ','','','','','','','','LRTB','','LRTB','LRTB');	//dibuja las celdas q se habbilitan en el total
+		$this->tablealigns=array('R','R','R','R','R','R','R','R','R','R','R','R','R','R','R');
+		$this->tablenumbers=array(0,0,0,0,0,0,0,0,2,0,0,0,0,2,2);
+		$this->tableborders=array(' ','','','','','','','','LRTB','','','','','LRTB','LRTB');	//dibuja las celdas q se habbilitan en el total
 
 		//$this->t1= ''.(string)(number_format($this->t1, 2, '.', ',')).'';
 		//$this->t2= ''.(string)(number_format($this->t2, 2, '.', ',')).'';
@@ -281,8 +294,11 @@ class RCobroReporteFacturaTodo extends ReportePDF {
 					'espacio' => 'TOTAL: ',
 					't7' => $this->t1,
 					't8' => '',
-					't9' => $this->t2,
-					't10' => $this->t3,
+            't10' => '',
+            't11' => '',
+            't12' => '',
+					't13' => $this->t2,
+					't14' => $this->t3,
 
 				);
 		$this-> MultiRow($RowArray,false,1);
