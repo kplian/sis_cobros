@@ -132,14 +132,14 @@ class RCobroReporteFacturaTodoXls
 		/*	$this->docexcel->getActiveSheet()->getStyle('D1:J1')->applyFromArray($styleTitulos3);				
 			$this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(5,1,'FACTURAS Y SUS COBROS');	
 				*/
-					$this->docexcel->getActiveSheet()->getStyle('A1:O1')->applyFromArray($styleTitulos3);
+					$this->docexcel->getActiveSheet()->getStyle('A1:P1')->applyFromArray($styleTitulos3);
 					$this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(0,1,'FACTURAS');						
 					//aplica estilo a una linea a una fila de celdas
-					$this->docexcel->getActiveSheet()->getStyle('A2:O2')->applyFromArray($styleTitulos4);
+					$this->docexcel->getActiveSheet()->getStyle('A2:P2')->applyFromArray($styleTitulos4);
 					//$this->docexcel->getActiveSheet()->getStyle('A3:G3')->applyFromArray($styleTitulos4);
 				    //$this->docexcel->getActiveSheet()->getStyle('A4:G4')->applyFromArray($styleTitulos4);
 					
-					$this->docexcel->getActiveSheet()->getStyle('A3:O3')->applyFromArray($styleTitulos2);
+					$this->docexcel->getActiveSheet()->getStyle('A3:P3')->applyFromArray($styleTitulos2);
 					//$this->docexcel->getActiveSheet()->getStyle('A3:V3')->applyFromArray($styleTitulos2);
 					//SE COLOCA LAS DIMENSIONES QUE TENDRA LAS CELDAS
 					$this->docexcel->getActiveSheet()->getColumnDimension('B')->setWidth(20);
@@ -172,7 +172,7 @@ class RCobroReporteFacturaTodoXls
 					 //une celdas 
 				
 					 
-					 $this->docexcel->getActiveSheet()->mergeCells('A1:O1');
+					 $this->docexcel->getActiveSheet()->mergeCells('A1:P1');
 					
 					 
 					//$this->docexcel->getActiveSheet()->mergeCells('B2:C2');
@@ -217,8 +217,9 @@ class RCobroReporteFacturaTodoXls
 					$this->docexcel->getActiveSheet()->setCellValue('K3','CUENTA PENDIENTE');
 					$this->docexcel->getActiveSheet()->setCellValue('L3','RET. GARANTIA');
 					$this->docexcel->getActiveSheet()->setCellValue('M3','ANTICIPO');
-					$this->docexcel->getActiveSheet()->setCellValue('N3','IMPORTE COBRADO(BS)');
-					$this->docexcel->getActiveSheet()->setCellValue('O3','SALDO POR COBRAR');
+			        $this->docexcel->getActiveSheet()->setCellValue('N3','PAGO LIQUIDO');
+					$this->docexcel->getActiveSheet()->setCellValue('O3','IMPORTE COBRADO(BS)');
+					$this->docexcel->getActiveSheet()->setCellValue('P3','SALDO POR COBRAR');
 					
 					
 				
@@ -369,8 +370,9 @@ class RCobroReporteFacturaTodoXls
 						$this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(10, $fila, $value['importe_pendiente']);// #7
 						$this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(11, $fila, $value['importe_retgar']);// #7
 						$this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(12, $fila, $value['importe_anticipo']);// #7
-						$this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(13, $fila, $value['importe_cobrado_mb']);
-						$this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(14, $fila, $value['saldo_por_cobrar']);
+						$this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(13, $fila, $value['importe_pago_liquido']);// #7
+						$this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(14, $fila, $value['importe_cobrado_mb']);
+						$this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(15, $fila, $value['saldo_por_cobrar']);
 						$this->numero++;
 						
 						
@@ -384,8 +386,12 @@ class RCobroReporteFacturaTodoXls
 
 		   $this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(5,$fila,'TOTALES:');
            $this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(8,$fila,'=SUM(I4:I'.($fila-1).')');
+           $this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(10,$fila,'=SUM(K4:K'.($fila-1).')');// #7
+           $this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(11,$fila,'=SUM(L4:L'.($fila-1).')');// #7
+           $this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(12,$fila,'=SUM(M4:M'.($fila-1).')');// #7
 		   $this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(13, $fila,'=SUM(N4:N'.($fila-1).')');
 		   $this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(14, $fila,'=SUM(O4:O'.($fila-1).')');
+		   $this->docexcel->getActiveSheet()->setCellValueByColumnAndRow(15, $fila,'=SUM(P4:P'.($fila-1).')');
 		   
 		   $this->docexcel->getActiveSheet()->getStyle('A'.(4).':A'.($fila-1).'')->applyFromArray($styleTitulos5);
 		   $this->docexcel->getActiveSheet()->getStyle('B'.(4).':B'.($fila-1).'')->applyFromArray($styleTitulos4);
@@ -403,17 +409,17 @@ class RCobroReporteFacturaTodoXls
 		   $this->docexcel->getActiveSheet()->getStyle('M'.(4).':M'.($fila).'')->applyFromArray($styleTitulos5);
 		   $this->docexcel->getActiveSheet()->getStyle('N'.(4).':N'.($fila).'')->applyFromArray($styleTitulos5);
 		   $this->docexcel->getActiveSheet()->getStyle('O'.(4).':O'.($fila).'')->applyFromArray($styleTitulos5);
-		   
+		   $this->docexcel->getActiveSheet()->getStyle('P'.(4).':P'.($fila).'')->applyFromArray($styleTitulos5);
 		   
 		  // $this->docexcel->getActiveSheet()->getStyle('D'.(4).':D'.($fila-1).'')->getNumberFormat()->setFormatCode('#,##0.00');
 		   	$this->docexcel->getActiveSheet()->getStyle('I'.(4).':I'.($fila).'')->getNumberFormat()->setFormatCode('#,##0.00');///EGS-27/08/2018
 			$this->docexcel->getActiveSheet()->getStyle('K'.(4).':K'.($fila).'')->getNumberFormat()->setFormatCode('#,##0.00');
 			$this->docexcel->getActiveSheet()->getStyle('L'.(4).':L'.($fila).'')->getNumberFormat()->setFormatCode('#,##0.00');
 			$this->docexcel->getActiveSheet()->getStyle('M'.(4).':M'.($fila).'')->getNumberFormat()->setFormatCode('#,##0.00');
-
-		   $this->docexcel->getActiveSheet()->getStyle('N'.(4).':N'.($fila).'')->getNumberFormat()->setFormatCode('#,##0.00');//EGS-27/08/2018
-		   $this->docexcel->getActiveSheet()->getStyle('O'.(4).':O'.($fila).'')->getNumberFormat()->setFormatCode('#,##0.00');
-		   $this->docexcel->getActiveSheet()->getStyle('O'.($fila).':O'.($fila).'')->getNumberFormat()->setFormatCode('#,##0.00');
+			$this->docexcel->getActiveSheet()->getStyle('N'.(4).':N'.($fila).'')->getNumberFormat()->setFormatCode('#,##0.00');
+		   $this->docexcel->getActiveSheet()->getStyle('O'.(4).':O'.($fila).'')->getNumberFormat()->setFormatCode('#,##0.00');//EGS-27/08/2018
+		   $this->docexcel->getActiveSheet()->getStyle('P'.(4).':P'.($fila).'')->getNumberFormat()->setFormatCode('#,##0.00');
+		   $this->docexcel->getActiveSheet()->getStyle('P'.($fila).':P'.($fila).'')->getNumberFormat()->setFormatCode('#,##0.00');
 		   
 		   
 		  	

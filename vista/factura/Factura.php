@@ -1935,7 +1935,7 @@ Phx.vista.Factura = Ext.extend(Phx.gridInterfaz,{
         var win = Phx.CP.loadWindows(
             '../../../sis_cobros/vista/factura/FormFiltroReporte.php',
             'Filtros', {
-                width: '25%',
+                width: '40%',
                 height: '40%'
             },
             data,

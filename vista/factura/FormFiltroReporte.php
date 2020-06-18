@@ -41,7 +41,7 @@ Phx.vista.FormFiltroReporte=Ext.extend(Phx.frmInterfaz,{
 				lazyRender:true,
 				mode: 'local',
 				valueField: 'tipo_reporte',
-				anchor: '100%',
+				anchor: '90%',
 				gwidth: 100,
 				store:new Ext.data.ArrayStore({
 					fields: ['variable', 'valor'],
@@ -96,7 +96,7 @@ Phx.vista.FormFiltroReporte=Ext.extend(Phx.frmInterfaz,{
                 mode:'remote',
                 pageSize:10,
                 queryDelay:1000,
-                anchor: '80%',
+                anchor: '90%',
                 minChars:2
             },
             type: 'ComboBox',
