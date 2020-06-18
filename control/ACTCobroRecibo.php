@@ -10,6 +10,7 @@
  ISSUE			FECHA			AUTOR		DESCRIPCION
  1C				17/08/2018		EGS			Se añadió filtros y listas para el tipo de cobro y reporte de todas las facturas
  #1				09/08/2019		RCM 		Corrección por actualización PHP 7, cambio de nombre a método
+ #7             16/06/2020      EGS         Se agrega filtro para reporte de facturas completas
 ****************************************************************************************
 */
 //require_once(dirname(__FILE__).'/../reportes/RDetallePago.php');
@@ -492,6 +493,7 @@ function listarFacturaCombo(){
 		if(($this->objParam->getParametro('todo'))=='cliente'&& $this->objParam->getParametro('formato')=='xls')
 		{
 
+
 			$this->objFun=$this->create('MODCobroRecibo');
 			//var_dump($this->res = $this->objFun->listarCobroReporteFactura($this->objParam));
 			$this->res = $this->objFun->listarFactura($this->objParam);
@@ -518,7 +520,10 @@ function listarFacturaCombo(){
 
 		if(($this->objParam->getParametro('todo')) == 'factura'&& $this->objParam->getParametro('formato')=='xls')
 		{
+            if($this->objParam->getParametro('codigo_aplicacion')!=''){// #7
+                $this->objParam->addFiltro(" dcv.codigo_aplicacion = ''".$this->objParam->getParametro('codigo_aplicacion')."''");
 
+            }
 			$this->objFun=$this->create('MODCobroRecibo');
 			//var_dump($this->res = $this->objFun->listarCobroReporteFactura($this->objParam));
 			$this->res = $this->objFun->listarFactura($this->objParam);
@@ -542,7 +547,10 @@ function listarFacturaCombo(){
 		}
 		if(($this->objParam->getParametro('todo')) == 'factura'&& $this->objParam->getParametro('formato')=='pdf')
 		{
+            if($this->objParam->getParametro('codigo_aplicacion')!=''){// #7
+                $this->objParam->addFiltro(" dcv.codigo_aplicacion = ''".$this->objParam->getParametro('codigo_aplicacion')."''");
 
+            }
 			$nombreArchivo = uniqid(md5(session_id()).'-Cbte') . '.pdf';
 
 				//var_dump($dataSource = $this->recuperarDatosCobroRecibo());

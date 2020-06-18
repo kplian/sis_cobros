@@ -1,3 +1,5 @@
+--------------- SQL ---------------
+
 CREATE OR REPLACE FUNCTION cbr.ft_cobro_recibo_sel (
   p_administrador integer,
   p_id_usuario integer,
@@ -8,16 +10,16 @@ RETURNS varchar AS
 $body$
 /**************************************************************************
  SISTEMA:		Cuenta Documenta
- FUNCION: 		cbr.ft_cobro_recibo_sel 
+ FUNCION: 		cbr.ft_cobro_recibo_sel
  DESCRIPCION:   Funcion que devuelve conjuntos de registros de las consultas relacionadas con la tabla 'cbr.ft_cobro_recibo_sel '
  AUTOR: 		 (admin)
  FECHA:	        01-01-2018 06:21:25
- COMENTARIOS:	
+ COMENTARIOS:
 ***************************************************************************
  HISTORIAL DE MODIFICACIONES:
 #ISSUE				FECHA				AUTOR				DESCRIPCION
- #0				01-01-2018 06:21:25								Funcion que devuelve conjuntos de registros de las consultas relacionadas con la tabla 'cbr.tcobro_simple_det'	
- #
+ #0				01-01-2018 06:21:25								Funcion que devuelve conjuntos de registros de las consultas relacionadas con la tabla 'cbr.tcobro_simple_det'
+ #7               16/06/2020          EGS                     Se agrega codigo de aplicacion
  ***************************************************************************/
 
 DECLARE
@@ -26,8 +28,8 @@ DECLARE
 	v_parametros  		record;
 	v_nombre_funcion   	text;
 	v_resp				varchar;
-    
-    	
+
+
     v_id_entidad		integer;
     v_id_deptos			varchar;
     v_registros 		record;
@@ -37,55 +39,55 @@ DECLARE
     v_tipo   			varchar;
     v_sincronizar		varchar;
     v_gestion			integer;
-    v_filtro_ext		varchar;    
+    v_filtro_ext		varchar;
     V_filtroLCV         varchar;
     v_id_auxiliar  		integer;
     v_id_auxiliar_2  	integer;
- 
+
     v_estado            varchar;
     v_historico         varchar;
     v_inner             varchar;
     v_strg_cd           varchar;
     v_strg_obs          varchar;
-    
+
     v_parametroCambiante  	integer;
-    
-      
+
+
     v_bandera						varchar;
    v_bandera_rg 					varchar;
    v_bandera_ant					varchar;
    v_bandera_regularizacion			varchar;
    v_bandera_regularizacion_rg			varchar;
    v_bandera_regularizacion_ant		varchar;
-    
-			    
+
+
 BEGIN
 
 	v_nombre_funcion = 'cbr.ft_cobro_recibo_sel ';
     v_parametros = pxp.f_get_record(p_tabla);
 
-	/*********************************    
+	/*********************************
  	#TRANSACCION:  'CBR_COBREC_SEL'
  	#DESCRIPCION:	Consulta de datos
- 	#AUTOR:		admin	
+ 	#AUTOR:		admin
  	#FECHA:		01-01-2018 06:21:25
 	***********************************/
 
 	if(p_transaccion='CBR_COBREC_SEL')then
-     				
+
     	begin
     		--Sentencia de la consulta
-			v_consulta:=' SELECT 
+			v_consulta:=' SELECT
                          ps.id_cobro_simple,
-                         moneda.codigo,     
+                         moneda.codigo,
                          ps.id_cuenta_bancaria,
                          ps.importe,
                          pxp.f_convertir_num_a_letra(importe) as importe_literal,
                          pro.desc_proveedor,
                          ps.id_funcionario,
-                         ps.id_proveedor,   
+                         ps.id_proveedor,
                          ps.nro_tramite,
-                         ps.obs,    
+                         ps.obs,
                          ps.fecha
                   FROM cbr.tcobro_simple ps
                        JOIN param.tmoneda moneda ON moneda.id_moneda = ps.id_moneda
@@ -93,16 +95,16 @@ BEGIN
                        JOIN param.tperiodo per ON ps.fecha >= per.fecha_ini AND ps.fecha <=
                          per.fecha_fin
                   where ps.id_proceso_wf ='||v_parametros.id_proceso_wf||'';
-			
+
 			--Devuelve la respuesta
-            
-            --RAISE NOTICE '%',v_consulta; 
+
+            --RAISE NOTICE '%',v_consulta;
            --RAISE EXCEPTION '%', v_consulta;
 			return v_consulta;
-						
+
 		end;
-        
-       
+
+
      /*********************************
  	#TRANSACCION:  'CBR_COBCBR_SEL'
  	#DESCRIPCION:	Consulta de datos para la grilla
@@ -113,36 +115,36 @@ BEGIN
 	elseif(p_transaccion='CBR_COBCBR_SEL')then
 
     	begin
-            
+
              v_bandera = split_part(pxp.f_get_variable_global('v_cobro_comun'), ',', 1);
              v_bandera_rg = split_part(pxp.f_get_variable_global('v_cobro_retencion_garantia'), ',', 1);
 			 v_bandera_regularizacion = split_part(pxp.f_get_variable_global('v_cobro_comun'), ',', 2);
              v_bandera_regularizacion_rg = split_part(pxp.f_get_variable_global('v_cobro_retencion_garantia'), ',', 2);
              v_bandera_ant = split_part(pxp.f_get_variable_global('v_cobro_anticipo'), ',', 1);
              v_bandera_regularizacion_ant = split_part(pxp.f_get_variable_global('v_cobro_anticipo'), ',', 2);
-                      
+
     		--Sentencia de la consulta
 			v_consulta:='
              WITH  doc_cobrado(
-                                    id_doc_compra_venta,                                  
+                                    id_doc_compra_venta,
                                     importe_mb,
                                     importe_mt,
                                     nro_tramite,
                                     id_cobro_simple,
                                     id_tipo_cobro_simple
-                                    
-                                            ) 
-                            
+
+                                            )
+
                            as (
-                                    select 
-                                       dcv.id_doc_compra_venta,                                      
+                                    select
+                                       dcv.id_doc_compra_venta,
                                        sum(COALESCE(csd.importe_mb,0)) as importe_mb,
                                        sum(COALESCE(csd.importe_mt,0)) as importe_mt,
                                        pxp.aggarray(cs.nro_tramite),
                                        pxp.aggarray(csd.id_cobro_simple),
                                        pxp.aggarray(tcs.id_tipo_cobro_simple)
-                                                                              
-                                    from conta.tdoc_compra_venta dcv 
+
+                                    from conta.tdoc_compra_venta dcv
                                     inner join cbr.tcobro_simple_det csd on csd.id_doc_compra_venta = dcv.id_doc_compra_venta
                                     inner join cbr.tcobro_simple cs on cs.id_cobro_simple = csd.id_cobro_simple
                                     inner join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cs.id_tipo_cobro_simple
@@ -150,18 +152,18 @@ BEGIN
                                     group by dcv.id_doc_compra_venta
                            ),
  doc_cobrado_retgar(
-                                    id_doc_compra_venta,                                  
+                                    id_doc_compra_venta,
                                     importe_mb,
                                     importe_mt
-                                            ) 
-                            
+                                            )
+
                            as (
-                                    select 
-                                       dcv.id_doc_compra_venta,                                      
+                                    select
+                                       dcv.id_doc_compra_venta,
                                        sum(csd.importe_mb) as importe_mb,
                                        sum(csd.importe_mt) as importe_mt
-                                                                              
-                                    from conta.tdoc_compra_venta dcv 
+
+                                    from conta.tdoc_compra_venta dcv
                                     inner join cbr.tcobro_simple_det csd on csd.id_doc_compra_venta = dcv.id_doc_compra_venta
                                     left join cbr.tcobro_simple cs on cs.id_cobro_simple = csd.id_cobro_simple
                                     left join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cs.id_tipo_cobro_simple
@@ -170,18 +172,18 @@ BEGIN
                            )
                            ,
  doc_cobrado_anticipo(
-                                    id_doc_compra_venta,                                  
+                                    id_doc_compra_venta,
                                     importe_mb,
                                     importe_mt
-                                            ) 
-                            
+                                            )
+
                            as (
-                                    select 
-                                       dcv.id_doc_compra_venta,                                      
+                                    select
+                                       dcv.id_doc_compra_venta,
                                        sum(csd.importe_mb) as importe_mb,
                                        sum(csd.importe_mt) as importe_mt
-                                                                              
-                                    from conta.tdoc_compra_venta dcv 
+
+                                    from conta.tdoc_compra_venta dcv
                                     inner join cbr.tcobro_simple_det csd on csd.id_doc_compra_venta = dcv.id_doc_compra_venta
                                     left join cbr.tcobro_simple cs on cs.id_cobro_simple = csd.id_cobro_simple
                                     left join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cs.id_tipo_cobro_simple
@@ -189,28 +191,28 @@ BEGIN
                                     group by dcv.id_doc_compra_venta
                            ),
    numero_cobro(
-                                    id_doc_compra_venta,                                  
+                                    id_doc_compra_venta,
                                     nro_tramite,
                                     id_cobro_simple,
                                     id_tipo_cobro_simple
-                                    
-                                            ) 
-                            
+
+                                            )
+
                            as (
-                                    select 
+                                    select
                                        dcv.id_doc_compra_venta,
                                        pxp.aggarray(cs.nro_tramite),
                                        pxp.aggarray(csd.id_cobro_simple),
                                        pxp.aggarray(tcs.id_tipo_cobro_simple)
-                                                                              
-                                    from conta.tdoc_compra_venta dcv 
+
+                                    from conta.tdoc_compra_venta dcv
                                     inner join cbr.tcobro_simple_det csd on csd.id_doc_compra_venta = dcv.id_doc_compra_venta
                                     left join cbr.tcobro_simple cs on cs.id_cobro_simple = csd.id_cobro_simple
                                     left join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cs.id_tipo_cobro_simple
-                                    
+
                                     group by dcv.id_doc_compra_venta
                         )
-            
+
             select
                             dcv.id_doc_compra_venta,
                             dcv.revisado,
@@ -281,38 +283,38 @@ BEGIN
                                  COALESCE(dcv.importe_pendiente,0) - COALESCE(doc.importe_mb,0)
                               when  dcv.id_moneda  = 2 then
                                  COALESCE(dcv.importe_pendiente,0)  - COALESCE(doc.importe_mt,0)
-                              else  
-                                 0 
-                            end as saldo_por_cobrar_pendiente, 
+                              else
+                                 0
+                            end as saldo_por_cobrar_pendiente,
                             case
                               when dcv.id_moneda  = 1  then
                                 COALESCE(dcv.importe_retgar,0) - COALESCE(docrg.importe_mb,0)
                               when  dcv.id_moneda  = 2 then
                                   COALESCE(dcv.importe_retgar,0)  - COALESCE(docrg.importe_mt,0)
-                              else  
-                                 0 
-                            end as saldo_por_cobrar_retgar, 
+                              else
+                                 0
+                            end as saldo_por_cobrar_retgar,
                             case
                               when dcv.id_moneda  = 1  then
                                 COALESCE(dcv.importe_anticipo,0) - COALESCE(docanti.importe_mb,0)
                               when  dcv.id_moneda  = 2 then
                                   COALESCE(dcv.importe_anticipo,0)  - COALESCE(docanti.importe_mt,0)
-                              else  
-                                 0 
+                              else
+                                 0
                             end as saldo_por_cobrar_anticipo,
-                             
+
                             case
                               when dcv.id_moneda  = 1  then
                                 COALESCE(dcv.importe_pendiente,0) + COALESCE(dcv.importe_retgar,0)+ COALESCE(dcv.importe_anticipo,0) -  (COALESCE(doc.importe_mb,0)+ COALESCE(docrg.importe_mb,0)+ COALESCE(docanti.importe_mb,0))
                               when  dcv.id_moneda  = 2 then
                                 COALESCE(dcv.importe_pendiente,0) + COALESCE(dcv.importe_retgar,0)+ COALESCE(dcv.importe_anticipo,0) - (COALESCE(doc.importe_mt,0)+ COALESCE(docrg.importe_mt,0)+ COALESCE(docanti.importe_mt,0))
-                              else  
-                                 0 
+                              else
+                                 0
                             end as saldo_por_cobrar,
-                            
+
                             dcv.id_contrato,
                             con.numero as nro_contrato
-                          
+
 						from conta.tdoc_compra_venta dcv
                           inner join segu.tusuario usu1 on usu1.id_usuario = dcv.id_usuario_reg
                           inner join param.tplantilla pla on pla.id_plantilla = dcv.id_plantilla
@@ -323,7 +325,7 @@ BEGIN
                           left join doc_cobrado_anticipo docanti on docanti.id_doc_compra_venta = dcv.id_doc_compra_venta
                           left join numero_cobro nuco on nuco.id_doc_compra_venta = dcv.id_doc_compra_venta
                           left join conta.tauxiliar aux on aux.id_auxiliar = dcv.id_auxiliar
-                          left join conta.tint_comprobante ic on ic.id_int_comprobante = dcv.id_int_comprobante                         
+                          left join conta.tint_comprobante ic on ic.id_int_comprobante = dcv.id_int_comprobante
                           left join param.tdepto dep on dep.id_depto = dcv.id_depto_conta
                           left join segu.tusuario usu2 on usu2.id_usuario = dcv.id_usuario_mod
                           left join orga.vfuncionario fun on fun.id_funcionario = dcv.id_funcionario
@@ -336,14 +338,14 @@ BEGIN
 			--Definicion de la respuesta
 			v_consulta:=v_consulta||v_parametros.filtro;
 			v_consulta:=v_consulta||' order by ' ||v_parametros.ordenacion|| ' ' || v_parametros.dir_ordenacion || ' limit ' || v_parametros.cantidad || ' offset ' || v_parametros.puntero;
-			--RAISE NOTICE '%',v_consulta; 
+			--RAISE NOTICE '%',v_consulta;
            --RAISE EXCEPTION '%', v_consulta;
-      
+
 			--Devuelve la respuesta
 			return v_consulta;
 
 		end;
-        
+
 
     /*********************************
  	#TRANSACCION:  'CBR_COBCBR_CONT'
@@ -353,37 +355,37 @@ BEGIN
 	***********************************/
 
 	elsif(p_transaccion='CBR_COBCBR_CONT')then
-             
+
              v_bandera = split_part(pxp.f_get_variable_global('v_cobro_comun'), ',', 1);
              v_bandera_rg = split_part(pxp.f_get_variable_global('v_cobro_retencion_garantia'), ',', 1);
 			 v_bandera_regularizacion = split_part(pxp.f_get_variable_global('v_cobro_comun'), ',', 2);
              v_bandera_regularizacion_rg = split_part(pxp.f_get_variable_global('v_cobro_retencion_garantia'), ',', 2);
              v_bandera_ant = split_part(pxp.f_get_variable_global('v_cobro_anticipo'), ',', 1);
              v_bandera_regularizacion_ant = split_part(pxp.f_get_variable_global('v_cobro_anticipo'), ',', 2);
-     
+
           begin
-            
+
 			--Sentencia de la consulta de conteo de registros
 			v_consulta:=' WITH  doc_cobrado(
-                                    id_doc_compra_venta,                                  
+                                    id_doc_compra_venta,
                                     importe_mb,
                                     importe_mt,
                                     nro_tramite,
                                     id_cobro_simple,
                                     id_tipo_cobro_simple
-                                    
-                                            ) 
-                            
+
+                                            )
+
                            as (
-                                    select 
-                                       dcv.id_doc_compra_venta,                                      
+                                    select
+                                       dcv.id_doc_compra_venta,
                                        sum(COALESCE(csd.importe_mb,0)) as importe_mb,
                                        sum(COALESCE(csd.importe_mt,0)) as importe_mt,
                                        pxp.aggarray(cs.nro_tramite),
                                        pxp.aggarray(csd.id_cobro_simple),
                                        pxp.aggarray(tcs.id_tipo_cobro_simple)
-                                                                              
-                                    from conta.tdoc_compra_venta dcv 
+
+                                    from conta.tdoc_compra_venta dcv
                                     inner join cbr.tcobro_simple_det csd on csd.id_doc_compra_venta = dcv.id_doc_compra_venta
                                     inner join cbr.tcobro_simple cs on cs.id_cobro_simple = csd.id_cobro_simple
                                     inner join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cs.id_tipo_cobro_simple
@@ -391,18 +393,18 @@ BEGIN
                                     group by dcv.id_doc_compra_venta
                            ),
  doc_cobrado_retgar(
-                                    id_doc_compra_venta,                                  
+                                    id_doc_compra_venta,
                                     importe_mb,
                                     importe_mt
-                                            ) 
-                            
+                                            )
+
                            as (
-                                    select 
-                                       dcv.id_doc_compra_venta,                                      
+                                    select
+                                       dcv.id_doc_compra_venta,
                                        sum(csd.importe_mb) as importe_mb,
                                        sum(csd.importe_mt) as importe_mt
-                                                                              
-                                    from conta.tdoc_compra_venta dcv 
+
+                                    from conta.tdoc_compra_venta dcv
                                     inner join cbr.tcobro_simple_det csd on csd.id_doc_compra_venta = dcv.id_doc_compra_venta
                                     left join cbr.tcobro_simple cs on cs.id_cobro_simple = csd.id_cobro_simple
                                     left join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cs.id_tipo_cobro_simple
@@ -411,18 +413,18 @@ BEGIN
                            )
                            ,
  doc_cobrado_anticipo(
-                                    id_doc_compra_venta,                                  
+                                    id_doc_compra_venta,
                                     importe_mb,
                                     importe_mt
-                                            ) 
-                            
+                                            )
+
                            as (
-                                    select 
-                                       dcv.id_doc_compra_venta,                                      
+                                    select
+                                       dcv.id_doc_compra_venta,
                                        sum(csd.importe_mb) as importe_mb,
                                        sum(csd.importe_mt) as importe_mt
-                                                                              
-                                    from conta.tdoc_compra_venta dcv 
+
+                                    from conta.tdoc_compra_venta dcv
                                     inner join cbr.tcobro_simple_det csd on csd.id_doc_compra_venta = dcv.id_doc_compra_venta
                                     left join cbr.tcobro_simple cs on cs.id_cobro_simple = csd.id_cobro_simple
                                     left join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cs.id_tipo_cobro_simple
@@ -430,36 +432,36 @@ BEGIN
                                     group by dcv.id_doc_compra_venta
                            ) ,
      numero_cobro(
-                                    id_doc_compra_venta,                                  
+                                    id_doc_compra_venta,
                                     nro_tramite,
                                     id_cobro_simple,
                                     id_tipo_cobro_simple
-                                    
-                                            ) 
-                            
+
+                                            )
+
                            as (
-                                    select 
+                                    select
                                        dcv.id_doc_compra_venta,
                                        pxp.aggarray(cs.nro_tramite),
                                        pxp.aggarray(csd.id_cobro_simple),
                                        pxp.aggarray(tcs.id_tipo_cobro_simple)
-                                                                              
-                                    from conta.tdoc_compra_venta dcv 
+
+                                    from conta.tdoc_compra_venta dcv
                                     inner join cbr.tcobro_simple_det csd on csd.id_doc_compra_venta = dcv.id_doc_compra_venta
                                     left join cbr.tcobro_simple cs on cs.id_cobro_simple = csd.id_cobro_simple
                                     left join cbr.ttipo_cobro_simple tcs on tcs.id_tipo_cobro_simple = cs.id_tipo_cobro_simple
-                                    
+
                                     group by dcv.id_doc_compra_venta
                         )
-            
-                           
-            
-            select		 
-            			 count(dcv.id_doc_compra_venta), 
+
+
+
+            select
+            			 count(dcv.id_doc_compra_venta),
             			 sum(COALESCE(dcv.importe_doc,0))::numeric as total_importe,
                          sum((COALESCE(dcv.importe_pago_liquido,0)+COALESCE(doc.importe_mb,0)+ COALESCE(docrg.importe_mb,0)+ COALESCE(docanti.importe_mb,0)))::numeric  as total_importe_cobrado,
                          sum((COALESCE(dcv.importe_pendiente,0)-COALESCE(doc.importe_mb,0))+(COALESCE(dcv.importe_retgar,0)-COALESCE(docrg.importe_mb,0))+(COALESCE(dcv.importe_anticipo,0)-COALESCE(docanti.importe_mb,0)))as total_saldo_por_cobrar
-						
+
                           from conta.tdoc_compra_venta dcv
                           inner join segu.tusuario usu1 on usu1.id_usuario = dcv.id_usuario_reg
                           inner join param.tplantilla pla on pla.id_plantilla = dcv.id_plantilla
@@ -470,7 +472,7 @@ BEGIN
                           left join doc_cobrado_anticipo docanti on docanti.id_doc_compra_venta = dcv.id_doc_compra_venta
                           left join numero_cobro nuco on nuco.id_doc_compra_venta = dcv.id_doc_compra_venta
                           left join conta.tauxiliar aux on aux.id_auxiliar = dcv.id_auxiliar
-                          left join conta.tint_comprobante ic on ic.id_int_comprobante = dcv.id_int_comprobante                         
+                          left join conta.tint_comprobante ic on ic.id_int_comprobante = dcv.id_int_comprobante
                           left join param.tdepto dep on dep.id_depto = dcv.id_depto_conta
                           left join segu.tusuario usu2 on usu2.id_usuario = dcv.id_usuario_mod
                           left join orga.vfuncionario fun on fun.id_funcionario = dcv.id_funcionario
@@ -483,15 +485,15 @@ BEGIN
                       --Definicion de la respuesta
                       v_consulta:=v_consulta||v_parametros.filtro;
 					 --- v_consulta:=v_consulta||' group by  total_importe,total_importe_cobrado,total_saldo_por_cobrar' ;
-                   --  RAISE NOTICE '%',v_consulta; 
+                   --  RAISE NOTICE '%',v_consulta;
                    -- RAISE EXCEPTION '%', v_consulta;
                       --Devuelve la respuesta
                       return v_consulta;
-            end; 		
+            end;
          /*********************************
           #TRANSACCION:  'CBR_COBRS_SEL'
-          #DESCRIPCION:	consulta  razon social 
-       	
+          #DESCRIPCION:	consulta  razon social
+
           ***********************************/
 
           elsif(p_transaccion='CBR_COBRS_SEL')then
@@ -513,10 +515,10 @@ BEGIN
                   return v_consulta;
 
               end;
-             /*********************************    
+             /*********************************
     #TRANSACCION:  'CBR_COBRS_CONT'
     #DESCRIPCION:   Conteo de registros de razon social
-    #AUTOR:     admin   
+    #AUTOR:     admin
     #FECHA:     31-12-2017 12:33:30
     ***********************************/
 
@@ -525,39 +527,39 @@ BEGIN
         begin
 
             v_filtro='';
-          
+
             --Sentencia de la consulta de conteo de registros
-            v_consulta:='select count (DISTINCT dcv.razon_social)   
+            v_consulta:='select count (DISTINCT dcv.razon_social)
 			from conta.tdoc_compra_venta dcv
             inner join param.tplantilla pla on pla.id_plantilla = dcv.id_plantilla
              where dcv.nit !='' '' and pla.tipo_informe = ''lcv'' and dcv.razon_social like UPPER(''%'||COALESCE(v_parametros.razon_social,'-')||'%'')';
 
             --v_consulta = v_consulta || v_filtro;
-            
-            --Definicion de la respuesta            
+
+            --Definicion de la respuesta
            -- v_consulta:=v_consulta||v_parametros.filtro;
 
             --Devuelve la respuesta
             return v_consulta;
 
         end;
-    
-    /*********************************    
+
+    /*********************************
     #TRANSACCION:  'CBR_COBRO_SEL'
     #DESCRIPCION: listar cobro
-    #AUTOR:     admin   
+    #AUTOR:     admin
     #FECHA:     31-12-2017 12:33:30
     ***********************************/
 
    elsif(p_transaccion='CBR_COBRO_SEL')then
-                    
+
         begin
 
-           
+
 
             --Filtros
             v_filtro='';
-			--RAISE NOTICE '%',v_parametros.razon_social; 
+			--RAISE NOTICE '%',v_parametros.razon_social;
            --RAISE EXCEPTION '%',v_parametros.razon_social;
 
             --Sentencia de la consulta
@@ -605,7 +607,7 @@ BEGIN
                             dcv.razon_social,
                             dcv.nit,
                             paside.importe_mb importe_cobro_factura,
-                            (select 
+                            (select
                             ges.id_gestion
                             from param.tgestion ges
                             where ges.gestion = (date_part(''year'', pagsim.fecha))::integer
@@ -615,7 +617,7 @@ BEGIN
                             from param.tperiodo
                             where pagsim.fecha between fecha_ini and fecha_fin
                             limit 1 offset 0) as id_periodo,
-                            
+
                             pagsim.tipo_cambio,
                             pagsim.tipo_cambio_mt,
                             pagsim.tipo_cambio_ma,
@@ -624,8 +626,8 @@ BEGIN
                             pagsim.importe_mb,
                             pagsim.importe_ma,
                             forma_cambio
-                            
-                            
+
+
                         from cbr.tcobro_simple pagsim
                         inner join wf.testado_wf ew on ew.id_estado_wf = pagsim.id_estado_wf
                         inner join segu.tusuario usu1 on usu1.id_usuario = pagsim.id_usuario_reg
@@ -644,25 +646,25 @@ BEGIN
                         left join cbr.tcobro_simple_det paside on paside.id_cobro_simple = pagsim.id_cobro_simple
                         left join conta.tdoc_compra_venta dcv on dcv.id_doc_compra_venta = paside.id_doc_compra_venta
                         where  ';
-			
-            
-		--RAISE NOTICE '%',v_consulta; 
+
+
+		--RAISE NOTICE '%',v_consulta;
         --RAISE EXCEPTION '%', v_consulta;
            -- v_consulta = v_consulta || v_filtro;
-            
+
             --Definicion de la respuesta
             v_consulta:=v_consulta||v_parametros.filtro;
             v_consulta:=v_consulta||' order by ' ||v_parametros.ordenacion|| ' ' || v_parametros.dir_ordenacion || ' limit ' || v_parametros.cantidad || ' offset ' || v_parametros.puntero;
 
             --Devuelve la respuesta
             return v_consulta;
-                        
+
         end;
-        
-         /*********************************    
+
+         /*********************************
     #TRANSACCION:  'CBR_COBRO_CONT'
     #DESCRIPCION:   Conteo de registros de cobros
-    #AUTOR:     admin   
+    #AUTOR:     admin
     #FECHA:     31-12-2017 12:33:30
     ***********************************/
 
@@ -671,7 +673,7 @@ BEGIN
         begin
 
             v_filtro='';
-          
+
             --Sentencia de la consulta de conteo de registros
             v_consulta:='select count(pagsim.id_cobro_simple),
                         COALESCE(sum(paside.importe_mb), 0)::numeric as total_importe_cobro_factura
@@ -695,24 +697,24 @@ BEGIN
                         where ';
 
             v_consulta = v_consulta || v_filtro;
-            
-            --Definicion de la respuesta            
+
+            --Definicion de la respuesta
             v_consulta:=v_consulta||v_parametros.filtro;
 
             --Devuelve la respuesta
             return v_consulta;
 
         end;
-         
-      /*********************************    
+
+      /*********************************
         #TRANSACCION:  'CBR_CBRCOMBO_SEL'
         #DESCRIPCION: listar cobro Combo
-        #AUTOR:     admin   
+        #AUTOR:     admin
         #FECHA:     31-12-2017 12:33:30
         ***********************************/
 
        elsif(p_transaccion='CBR_CBRCOMBO_SEL')then
-                        
+
             begin
                 --Sentencia de la consulta
                 v_consulta:='select
@@ -734,29 +736,29 @@ BEGIN
                                 pagsim.usuario_ai,
                                 pagsim.id_usuario_mod,
                                 pagsim.fecha_mod,
-                                tcb.nombre                   
+                                tcb.nombre
                             from cbr.tcobro_simple pagsim
                             left join cbr.ttipo_cobro_simple tcb on tcb.id_tipo_cobro_simple = pagsim.id_tipo_cobro_simple
                                  where ';
-    			
-                
-           
+
+
+
                -- v_consulta = v_consulta || v_filtro;
-                
+
                 --Definicion de la respuesta
                 v_consulta:=v_consulta||v_parametros.filtro;
                -- v_consulta:=v_consulta||' order by ' ||v_parametros.ordenacion|| ' ' || v_parametros.dir_ordenacion || ' limit ' || v_parametros.cantidad || ' offset ' || v_parametros.puntero;
-				 --RAISE NOTICE '%',v_consulta; 
-            	--RAISE EXCEPTION '%', v_consulta;	
+				 --RAISE NOTICE '%',v_consulta;
+            	--RAISE EXCEPTION '%', v_consulta;
                 --Devuelve la respuesta
                 return v_consulta;
-                            
+
             end;
-                  
-            /*********************************    
+
+            /*********************************
           #TRANSACCION:  'CBR_CBRCOMBO_CONT'
           #DESCRIPCION:   Conteo de registros de cobros combo
-          #AUTOR:     admin   
+          #AUTOR:     admin
           #FECHA:     31-12-2017 12:33:30
           ***********************************/
 
@@ -765,56 +767,56 @@ BEGIN
               begin
 
                   v_filtro='';
-                
+
                   --Sentencia de la consulta de conteo de registros
                   v_consulta:='select count(pagsim.id_cobro_simple)
                               from cbr.tcobro_simple pagsim
                               where ';
 
                   --v_consulta = v_consulta || v_filtro;
-                  
-                  --Definicion de la respuesta            
+
+                  --Definicion de la respuesta
                   v_consulta:=v_consulta||v_parametros.filtro;
 
                   --Devuelve la respuesta
                   return v_consulta;
 
               end;
-      
+
           /*********************************
  	#TRANSACCION:  'CBR_COBREFA_SEL'
  	#DESCRIPCION:	Consulta de datos reporte facturas en pdf
- 	#AUTOR:		
+ 	#AUTOR:
  	#FECHA:		04-04-2018 15:57:09
 	***********************************/
 
 	elseif(p_transaccion='CBR_COBREFA_SEL')then
 
     	begin
-         --RAISE NOTICE 'hola'; 
+         --RAISE NOTICE 'hola';
          --RAISE EXCEPTION 'hola';
-         
-               
-         
+
+
+
     		--Sentencia de la consulta
 			v_consulta:='
              WITH  doc_cobrado(
-                                     id_doc_compra_venta,                                  
+                                     id_doc_compra_venta,
                                     importe_mb,
-                                    importe_mt) 
-                            
+                                    importe_mt)
+
                            as (
-                                    select 
-                                       dcv.id_doc_compra_venta,                                      
+                                    select
+                                       dcv.id_doc_compra_venta,
                                        sum(csd.importe_mb) as importe_mb,
-                                       sum(csd.importe_mt) as importe_mt                                        
-                                    from conta.tdoc_compra_venta dcv 
+                                       sum(csd.importe_mt) as importe_mt
+                                    from conta.tdoc_compra_venta dcv
                                     inner join cbr.tcobro_simple_det csd on csd.id_doc_compra_venta = dcv.id_doc_compra_venta
-                                   
+
                                     group by dcv.id_doc_compra_venta
                            )
-            
-            select          
+
+            select
             				ROW_NUMBER () OVER (ORDER BY  dcv.id_doc_compra_venta )as id,
                             dcv.id_doc_compra_venta,
                             dcv.revisado,
@@ -873,27 +875,27 @@ BEGIN
                             ic.fecha as fecha_cbte,
                             ic.estado_reg as estado_cbte,
                             paside.id_cobro_simple,
-                            pagsim.fecha as fecha_cobro,  
+                            pagsim.fecha as fecha_cobro,
                             pagsim.nro_tramite as nro_tramite_cobro,
                             pagsim.importe as importe_cobro,
                             pagsim.id_moneda as id_moneda_cobro,
                             mo.codigo as desc_moneda_cobro,
                             paside.importe_mb as importe_cobro_factura,
-                            dcv.id_periodo, 
+                            dcv.id_periodo,
                             per.id_gestion,
                            (COALESCE(doc.importe_mb,0)+ COALESCE(dcv.importe_pago_liquido,0)) as importe_cobrado_mb,
                             COALESCE(doc.importe_mt,0) as importe_cobrado_mt,
                             case
                               when dcv.id_moneda  = 1  then
-                                COALESCE(dcv.importe_pendiente,0) + COALESCE(dcv.importe_retgar,0)+ COALESCE(dcv.importe_anticipo,0) - COALESCE(doc.importe_mb,0) 
+                                COALESCE(dcv.importe_pendiente,0) + COALESCE(dcv.importe_retgar,0)+ COALESCE(dcv.importe_anticipo,0) - COALESCE(doc.importe_mb,0)
                               when  dcv.id_moneda  = 2 then
                                 COALESCE(dcv.importe_pendiente,0) + COALESCE(dcv.importe_retgar,0)+ COALESCE(dcv.importe_anticipo,0) - COALESCE(doc.importe_mt ,0)
-                              else  
-                                 0 
+                              else
+                                 0
                             end as saldo_por_cobrar,
                             dcv.id_contrato,
                             cto.numero as nro_contrato
-                            
+
 						from conta.tdoc_compra_venta dcv
                           inner join segu.tusuario usu1 on usu1.id_usuario = dcv.id_usuario_reg
                           inner join param.tplantilla pla on pla.id_plantilla = dcv.id_plantilla
@@ -901,7 +903,7 @@ BEGIN
                           inner join conta.ttipo_doc_compra_venta tdcv on tdcv.id_tipo_doc_compra_venta = dcv.id_tipo_doc_compra_venta
                           left join doc_cobrado doc on doc.id_doc_compra_venta = dcv.id_doc_compra_venta
                           left join conta.tauxiliar aux on aux.id_auxiliar = dcv.id_auxiliar
-                          left join conta.tint_comprobante ic on ic.id_int_comprobante = dcv.id_int_comprobante                         
+                          left join conta.tint_comprobante ic on ic.id_int_comprobante = dcv.id_int_comprobante
                           left join param.tdepto dep on dep.id_depto = dcv.id_depto_conta
                           left join segu.tusuario usu2 on usu2.id_usuario = dcv.id_usuario_mod
                           left join orga.vfuncionario fun on fun.id_funcionario = dcv.id_funcionario
@@ -910,17 +912,17 @@ BEGIN
                           left join param.tperiodo per on per.id_periodo =  dcv.id_periodo
                           left join param.tmoneda mo on mo.id_moneda = pagsim.id_moneda
                           left join leg.tcontrato cto on cto.id_contrato = dcv.id_contrato
-				        where  pla.tipo_plantilla = ''venta'' and  '; 
- 
-		--RAISE NOTICE '%',v_consulta; 
+				        where  pla.tipo_plantilla = ''venta'' and  ';
+
+		--RAISE NOTICE '%',v_consulta;
         --RAISE EXCEPTION '%', v_consulta;
             v_consulta:=v_consulta||v_parametros.filtro;
 			--Devuelve la respuesta
 			return v_consulta;
 
 		end;
-        
-                
+
+
      /*********************************
  	#TRANSACCION:  'CBR_LISFAC_SEL'
  	#DESCRIPCION:	Consulta de datos lista combo
@@ -931,30 +933,30 @@ BEGIN
 	elseif(p_transaccion='CBR_LISFAC_SEL')then
 
     	begin
-            
-                      
+
+
     		--Sentencia de la consulta
 			v_consulta:='
             WITH  doc_cobrado(
                                     id_doc_compra_venta,
-                                    fecha_ultimo_pago,                                 
+                                    fecha_ultimo_pago,
                                     importe_mb,
-                                    importe_mt) 
-                            
+                                    importe_mt)
+
                            as (
-                                    select 
+                                    select
                                        dcv.id_doc_compra_venta,
-                                       MAX(cs.fecha),                                      
+                                       MAX(cs.fecha),
                                        sum(csd.importe_mb) as importe_mb,
-                                       sum(csd.importe_mt) as importe_mt                                        
-                                    from conta.tdoc_compra_venta dcv 
+                                       sum(csd.importe_mt) as importe_mt
+                                    from conta.tdoc_compra_venta dcv
                                     inner join cbr.tcobro_simple_det csd on csd.id_doc_compra_venta = dcv.id_doc_compra_venta
-                                    inner join cbr.tcobro_simple cs on cs.id_cobro_simple = csd.id_cobro_simple   
-                                   
+                                    inner join cbr.tcobro_simple cs on cs.id_cobro_simple = csd.id_cobro_simple
+
                                     group by dcv.id_doc_compra_venta
                            )
-            
-            select          
+
+            select
             				ROW_NUMBER () OVER (ORDER BY  dcv.id_doc_compra_venta )as id,
                             dcv.id_doc_compra_venta,
                             dcv.revisado,
@@ -1018,15 +1020,16 @@ BEGIN
                             doc.fecha_ultimo_pago::date,
                             case
                               when dcv.id_moneda  = 1  then
-                                COALESCE(dcv.importe_pendiente,0) + COALESCE(dcv.importe_retgar,0) + COALESCE(dcv.importe_anticipo,0)- COALESCE(doc.importe_mb,0) 
+                                COALESCE(dcv.importe_pendiente,0) + COALESCE(dcv.importe_retgar,0) + COALESCE(dcv.importe_anticipo,0)- COALESCE(doc.importe_mb,0)
                               when  dcv.id_moneda  = 2 then
                                 COALESCE(dcv.importe_pendiente,0) + COALESCE(dcv.importe_retgar,0) + COALESCE(dcv.importe_anticipo,0)- COALESCE(doc.importe_mt ,0)
-                              else  
-                                 0 
+                              else
+                                 0
                             end as saldo_por_cobrar,
                             dcv.id_contrato,
-                            cto.numero as nro_contrato
-                            
+                            cto.numero as nro_contrato,
+                            dcv.codigo_aplicacion --#17
+
 						from conta.tdoc_compra_venta dcv
                           inner join segu.tusuario usu1 on usu1.id_usuario = dcv.id_usuario_reg
                           inner join param.tplantilla pla on pla.id_plantilla = dcv.id_plantilla
@@ -1034,7 +1037,7 @@ BEGIN
                           inner join conta.ttipo_doc_compra_venta tdcv on tdcv.id_tipo_doc_compra_venta = dcv.id_tipo_doc_compra_venta
                           left join doc_cobrado doc on doc.id_doc_compra_venta = dcv.id_doc_compra_venta
                           left join conta.tauxiliar aux on aux.id_auxiliar = dcv.id_auxiliar
-                          left join conta.tint_comprobante ic on ic.id_int_comprobante = dcv.id_int_comprobante                         
+                          left join conta.tint_comprobante ic on ic.id_int_comprobante = dcv.id_int_comprobante
                           left join param.tdepto dep on dep.id_depto = dcv.id_depto_conta
                           left join segu.tusuario usu2 on usu2.id_usuario = dcv.id_usuario_mod
                           left join orga.vfuncionario fun on fun.id_funcionario = dcv.id_funcionario
@@ -1044,14 +1047,14 @@ BEGIN
 			--Definicion de la respuesta
 			v_consulta:=v_consulta||v_parametros.filtro;
 			v_consulta:=v_consulta||' order by dcv.razon_social asc' ;
-		--RAISE NOTICE '%',v_consulta; 
+		RAISE NOTICE '%',v_consulta;
         --RAISE EXCEPTION '%', v_consulta;
-            
+
 			--Devuelve la respuesta
 			return v_consulta;
 
 		end;
-        
+
 
     /*********************************
  	#TRANSACCION:  'CBR_LISFAC_CONT'
@@ -1062,10 +1065,10 @@ BEGIN
 
 	elsif(p_transaccion='CBR_LISFAC_CONT')then
 
-		
+
             begin
-            
-                      
+
+
 			--Sentencia de la consulta de conteo de registros
 			v_consulta:='select
                               count(dcv.id_doc_compra_venta),
@@ -1088,30 +1091,30 @@ BEGIN
                           inner join param.tmoneda mon on mon.id_moneda = dcv.id_moneda
                           inner join conta.ttipo_doc_compra_venta tdcv on tdcv.id_tipo_doc_compra_venta = dcv.id_tipo_doc_compra_venta
                           left join conta.tauxiliar aux on aux.id_auxiliar = dcv.id_auxiliar
-                          left join conta.tint_comprobante ic on ic.id_int_comprobante = dcv.id_int_comprobante                         
+                          left join conta.tint_comprobante ic on ic.id_int_comprobante = dcv.id_int_comprobante
                           left join param.tdepto dep on dep.id_depto = dcv.id_depto_conta
                           left join segu.tusuario usu2 on usu2.id_usuario = dcv.id_usuario_mod
                           left join orga.vfuncionario fun on fun.id_funcionario = dcv.id_funcionario
-                          left join leg.tcontrato cto on cto.id_contrato = dcv.id_contrato       
+                          left join leg.tcontrato cto on cto.id_contrato = dcv.id_contrato
 				        where   pla.tipo_plantilla = ''venta'' and';
 
 			--Definicion de la respuesta
 			v_consulta:=v_consulta||v_parametros.filtro;
-    	   --RAISE NOTICE '%',v_consulta; 
+    	   --RAISE NOTICE '%',v_consulta;
           -- RAISE EXCEPTION '%', v_consulta;
 			--Devuelve la respuesta
 			return v_consulta;
 
 		end;
-	
-					
+
+
 	else
-					     
+
 		raise exception 'Transaccion inexistente';
-					         
+
 	end if;
 EXCEPTION
-					
+
 	WHEN OTHERS THEN
 			v_resp='';
 			v_resp = pxp.f_agrega_clave(v_resp,'mensaje',SQLERRM);
@@ -1125,6 +1128,3 @@ VOLATILE
 CALLED ON NULL INPUT
 SECURITY INVOKER
 COST 100;
-
-ALTER FUNCTION cbr.ft_cobro_recibo_sel (p_administrador integer, p_id_usuario integer, p_tabla varchar, p_transaccion varchar)
-  OWNER TO postgres;

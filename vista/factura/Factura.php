@@ -9,6 +9,7 @@
  * 1B				17/08/2018			EGS				se hizo cambios para cobros regularizados y retencion de garantias , se movio y se habilito columnas
  * 1C				20/09/2018			EGS				se aumento codigo para el campo id_contrato
  * #3               12/09/2019          EGS             e habilito exportador de grilla
+ * #7               16/06/2020          EGS             Se agrega filtro para reporte de facturas completas
 */
 header("content-type: text/javascript; charset=UTF-8");
 ?>
@@ -151,6 +152,7 @@ Phx.vista.Factura = Ext.extend(Phx.gridInterfaz,{
                 }),
                 
                 ////EGS-I-17/08/2018///////////
+                    /*
                 this.addButton('btnImprimirTodoFactura', {
                 id: 'todo2',
                 iconCls: 'bexcel',//'bpdf',
@@ -184,13 +186,14 @@ Phx.vista.Factura = Ext.extend(Phx.gridInterfaz,{
 		                    handler: this.imprimirReporteTodoFacturaExcel,
 		                    scope: this
 		                }],
-                }),
+                }),*/
                ////EGS-F-17/08/2018///////////
             
 
 		
 		//this.iniciarEventos();
 		this.init();
+        this.reporteCobro();// #7
 		this.obtenerVariableGlobal();
 		//this.load({params:{start:0, limit:this.tam_pag}});
 	},
@@ -1904,8 +1907,70 @@ Phx.vista.Factura = Ext.extend(Phx.gridInterfaz,{
           width:'100%',
           height:'50%',
           cls:'Cobro'
-	}], 
+	}],
+    reporteCobro: function() {// #7
+        this.reporCobro = new Ext.Toolbar.SplitButton({
+            id: 'btnReCobro' + this.idContenedor,
+            text: 'Lista Todas las Facturas',
+            disabled: false,
+            grupo:[0],
+            iconCls : 'bexcel',
+            handler:this.formFiltroRe,
+            scope: this,
+            menu:{
+                items: [{
+                    id:'b-cobro-pdf-' + this.idContenedor,
+                    text: 'Filtrar',
+                    tooltip: '<b>Filtro de parametros a visualizar</b>',
+                    handler:this.formFiltroRe,
+                    scope: this
+                }
+                ]}
+        });
+        this.tbar.add(this.reporCobro);
+    },
 
+    formFiltroRe: function(){// #7
+        var data = this.getSelectedData();
+        var win = Phx.CP.loadWindows(
+            '../../../sis_cobros/vista/factura/FormFiltroReporte.php',
+            'Filtros', {
+                width: '40%',
+                height: '40%'
+            },
+            data,
+            this.idContenedor,
+            'FormFiltroReporte',
+            {
+                config:[{
+                    event:'beforesave',
+                    delegate: this.reporteCo,
+                }],
+                scope:this
+            }
+
+        )
+    },
+
+    reporteCo : function (wizard,resp){// #7
+
+        console.log('resp',resp);
+        Phx.CP.loadingShow();
+        Ext.Ajax.request({
+            url:'../../sis_cobros/control/CobroRecibo/cobroReporteFactura',
+            params:
+                {
+                    'codigo_aplicacion':resp.codigo_aplicacion,
+                    'todo':'factura',
+                    'formato':resp.tipo_formato,
+
+                },
+            success: this.successExport,
+            failure: this.conexionFailure,
+            timeout: 3.6e+6,
+            scope:this
+        });
+    },
 	
   
     

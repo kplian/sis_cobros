@@ -535,6 +535,7 @@ function listarCobroReporteFactura(){
 
 		$this->captura('id_contrato','int4');//1B					20/09/2018     EGS
 		$this->captura('nro_contrato','varchar');  //1B			20/09/2018     EGS
+        $this->captura('codigo_aplicacion','varchar');// #7
 		
 
 		//Ejecuta la instruccion
